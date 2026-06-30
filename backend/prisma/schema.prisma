@@ -116,19 +116,6 @@ enum PurchaseOrderStatus {
   CANCELLED
 }
 
-enum GoodsReceiptStatus {
-  DRAFT
-  COMPLETED
-  CANCELLED
-}
-
-enum RefundStatus {
-  REQUESTED
-  APPROVED
-  REJECTED
-  REFUNDED
-}
-
 model User {
   id                   Int                   @id @default(autoincrement())
   fullName             String                @map("full_name")
@@ -141,13 +128,29 @@ model User {
   updatedAt            DateTime              @updatedAt @map("updated_at")
   addresses            Address[]
   orders               Order[]
-  chatbotConversations ChatbotConversation[]
-  cart                 Cart?
   reviews              Review[]
   loyaltyProfile       LoyaltyProfile?
-  aiRecommendations    AiRecommendation[]
+  chatbotConversations ChatbotConversation[]
 
   @@map("users")
+}
+
+model Address {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  receiverName String   @map("receiver_name")
+  phone        String
+  province     String
+  district     String
+  ward         String
+  detail       String
+  isDefault    Boolean  @default(false) @map("is_default")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  user         User     @relation(fields: [userId], references: [id])
+  orders       Order[]
+
+  @@map("addresses")
 }
 
 model Category {
@@ -164,93 +167,99 @@ model Category {
 }
 
 model Product {
-  id             Int      @id @default(autoincrement())
-  categoryId     Int      @map("category_id")
+  id             Int                 @id @default(autoincrement())
+  categoryId     Int                 @map("category_id")
   name           String
-  slug           String   @unique
+  slug           String              @unique
   description    String?
-  unit           String   @default("kg")
-  price          Decimal? @db.Decimal(12, 2)
-  minimumOrderKg Int      @default(5) @map("minimum_order_kg")
-  imageUrl       String?  @map("image_url")
-  isRetail       Boolean  @default(true) @map("is_retail")
-  isB2b          Boolean  @default(true) @map("is_b2b")
-  isActive       Boolean  @default(true) @map("is_active")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-  category       Category @relation(fields: [categoryId], references: [id])
+  unit           String              @default("kg")
+  price          Decimal?            @db.Decimal(12, 2)
+  minimumOrderKg Int                 @default(5) @map("minimum_order_kg")
+  imageUrl       String?             @map("image_url")
+  isRetail       Boolean             @default(true) @map("is_retail")
+  isB2b          Boolean             @default(true) @map("is_b2b")
+  isActive       Boolean             @default(true) @map("is_active")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+  category       Category            @relation(fields: [categoryId], references: [id])
   orderItems     OrderItem[]
   inventories    Inventory[]
   stockMovements StockMovement[]
-  cartItems      CartItem[]
   reviews        Review[]
-  priceHistories ProductPriceHistory[]
-  promotionItems PromotionProduct[]
   purchaseItems  PurchaseOrderItem[]
-  aiRecommendations AiRecommendation[]
 
   @@map("products")
 }
 
-model QuoteRequest {
-  id                 Int                @id @default(autoincrement())
-  companyName        String             @map("company_name")
-  contactName        String             @map("contact_name")
-  phoneOrEmail       String             @map("phone_or_email")
-  productNeed        String             @map("product_need")
-  expectedQuantityKg Int?               @map("expected_quantity_kg")
-  note               String?
-  status             QuoteRequestStatus @default(NEW)
-  createdAt          DateTime           @default(now()) @map("created_at")
-  updatedAt          DateTime           @updatedAt @map("updated_at")
-  businessCustomerId Int?               @map("business_customer_id")
-  businessCustomer   BusinessCustomer?  @relation(fields: [businessCustomerId], references: [id])
+model Inventory {
+  id          Int      @id @default(autoincrement())
+  productId   Int      @map("product_id")
+  quantity    Int      @default(0)
+  minQuantity Int      @default(0) @map("min_quantity")
+  warehouse   String   @default("Kho chinh")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  product     Product  @relation(fields: [productId], references: [id])
 
-  @@map("quote_requests")
+  @@unique([productId, warehouse])
+  @@map("inventories")
 }
 
-model Address {
-  id          Int      @id @default(autoincrement())
-  userId      Int      @map("user_id")
-  receiverName String  @map("receiver_name")
-  phone       String
-  province    String
-  district    String
-  ward        String
-  detail      String
-  isDefault   Boolean  @default(false) @map("is_default")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  user        User     @relation(fields: [userId], references: [id])
-  orders      Order[]
+model StockMovement {
+  id        Int               @id @default(autoincrement())
+  productId Int               @map("product_id")
+  type      StockMovementType
+  quantity  Int
+  reason    String?
+  reference String?
+  createdAt DateTime          @default(now()) @map("created_at")
+  product   Product           @relation(fields: [productId], references: [id])
 
-  @@map("addresses")
+  @@map("stock_movements")
+}
+
+model Promotion {
+  id             Int             @id @default(autoincrement())
+  name           String
+  code           String?         @unique
+  discountType   DiscountType    @map("discount_type")
+  discountValue  Decimal         @map("discount_value") @db.Decimal(12, 2)
+  minOrderAmount Decimal?        @map("min_order_amount") @db.Decimal(12, 2)
+  startAt        DateTime        @map("start_at")
+  endAt          DateTime        @map("end_at")
+  status         PromotionStatus @default(DRAFT)
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  orders         Order[]
+
+  @@map("promotions")
 }
 
 model Order {
-  id                Int           @id @default(autoincrement())
-  userId            Int?          @map("user_id")
-  addressId         Int?          @map("address_id")
-  orderCode         String        @unique @map("order_code")
-  customerName      String        @map("customer_name")
-  customerPhone     String        @map("customer_phone")
-  customerEmail     String?       @map("customer_email")
-  subtotal          Decimal       @default(0) @db.Decimal(12, 2)
-  shippingFee       Decimal       @default(0) @map("shipping_fee") @db.Decimal(12, 2)
-  discountAmount    Decimal       @default(0) @map("discount_amount") @db.Decimal(12, 2)
-  totalAmount       Decimal       @default(0) @map("total_amount") @db.Decimal(12, 2)
-  note              String?
-  status            OrderStatus   @default(PENDING)
-  createdAt         DateTime      @default(now()) @map("created_at")
-  updatedAt         DateTime      @updatedAt @map("updated_at")
-  user              User?         @relation(fields: [userId], references: [id])
-  address           Address?      @relation(fields: [addressId], references: [id])
-  items             OrderItem[]
-  payments          Payment[]
-  shipment          Shipment?
-  cancellation      OrderCancellation?
-  reviews           Review[]
-  refunds           Refund[]
+  id              Int          @id @default(autoincrement())
+  userId          Int?         @map("user_id")
+  addressId       Int?         @map("address_id")
+  promotionId     Int?         @map("promotion_id")
+  orderCode       String       @unique @map("order_code")
+  customerName    String       @map("customer_name")
+  customerPhone   String       @map("customer_phone")
+  customerEmail   String?      @map("customer_email")
+  subtotal        Decimal      @default(0) @db.Decimal(12, 2)
+  shippingFee     Decimal      @default(0) @map("shipping_fee") @db.Decimal(12, 2)
+  discountAmount  Decimal      @default(0) @map("discount_amount") @db.Decimal(12, 2)
+  totalAmount     Decimal      @default(0) @map("total_amount") @db.Decimal(12, 2)
+  note            String?
+  cancelReason    String?      @map("cancel_reason")
+  refundAmount    Decimal?     @map("refund_amount") @db.Decimal(12, 2)
+  status          OrderStatus  @default(PENDING)
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  user            User?        @relation(fields: [userId], references: [id])
+  address         Address?     @relation(fields: [addressId], references: [id])
+  promotion       Promotion?   @relation(fields: [promotionId], references: [id])
+  items           OrderItem[]
+  payments        Payment[]
+  shipment        Shipment?
+  reviews         Review[]
 
   @@map("orders")
 }
@@ -279,62 +288,57 @@ model Payment {
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
   order           Order         @relation(fields: [orderId], references: [id])
-  refunds         Refund[]
 
   @@map("payments")
 }
 
 model Shipment {
-  id             Int            @id @default(autoincrement())
-  orderId         Int           @unique @map("order_id")
-  carrier        String?
-  trackingCode   String?        @map("tracking_code")
-  status         ShipmentStatus @default(WAITING)
-  shippedAt      DateTime?      @map("shipped_at")
-  deliveredAt    DateTime?      @map("delivered_at")
-  createdAt      DateTime       @default(now()) @map("created_at")
-  updatedAt      DateTime       @updatedAt @map("updated_at")
-  order          Order          @relation(fields: [orderId], references: [id])
-  deliveryLogs   DeliveryLog[]
+  id           Int            @id @default(autoincrement())
+  orderId      Int            @unique @map("order_id")
+  carrier      String?
+  trackingCode String?        @map("tracking_code")
+  status       ShipmentStatus @default(WAITING)
+  note         String?
+  shippedAt    DateTime?      @map("shipped_at")
+  deliveredAt  DateTime?      @map("delivered_at")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+  order        Order          @relation(fields: [orderId], references: [id])
 
   @@map("shipments")
 }
 
-model OrderCancellation {
-  id          Int      @id @default(autoincrement())
-  orderId     Int      @unique @map("order_id")
-  reason      String
-  cancelledBy String   @map("cancelled_by")
-  createdAt   DateTime @default(now()) @map("created_at")
-  order       Order    @relation(fields: [orderId], references: [id])
-
-  @@map("order_cancellations")
-}
-
-model Refund {
+model Review {
   id        Int          @id @default(autoincrement())
-  orderId   Int          @map("order_id")
-  paymentId Int?         @map("payment_id")
-  amount    Decimal      @db.Decimal(12, 2)
-  reason    String?
-  status    RefundStatus @default(REQUESTED)
+  userId    Int          @map("user_id")
+  productId Int          @map("product_id")
+  orderId   Int?         @map("order_id")
+  rating    Int
+  content   String?
+  status    ReviewStatus @default(PENDING)
   createdAt DateTime     @default(now()) @map("created_at")
   updatedAt DateTime     @updatedAt @map("updated_at")
-  order     Order        @relation(fields: [orderId], references: [id])
-  payment   Payment?     @relation(fields: [paymentId], references: [id])
+  user      User         @relation(fields: [userId], references: [id])
+  product   Product      @relation(fields: [productId], references: [id])
+  order     Order?       @relation(fields: [orderId], references: [id])
 
-  @@map("refunds")
+  @@unique([userId, productId, orderId])
+  @@map("reviews")
 }
 
-model DeliveryLog {
-  id         Int      @id @default(autoincrement())
-  shipmentId Int     @map("shipment_id")
-  status     String
-  note       String?
-  createdAt  DateTime @default(now()) @map("created_at")
-  shipment   Shipment @relation(fields: [shipmentId], references: [id])
+model LoyaltyProfile {
+  id             Int       @id @default(autoincrement())
+  userId         Int       @unique @map("user_id")
+  tier           String    @default("REGULAR")
+  points         Int       @default(0)
+  totalSpent     Decimal   @default(0) @map("total_spent") @db.Decimal(14, 2)
+  orderCount     Int       @default(0) @map("order_count")
+  lastPurchaseAt DateTime? @map("last_purchase_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  user           User      @relation(fields: [userId], references: [id])
 
-  @@map("delivery_logs")
+  @@map("loyalty_profiles")
 }
 
 model BusinessCustomer {
@@ -354,6 +358,23 @@ model BusinessCustomer {
   debts         Debt[]
 
   @@map("business_customers")
+}
+
+model QuoteRequest {
+  id                 Int                @id @default(autoincrement())
+  businessCustomerId Int?               @map("business_customer_id")
+  companyName        String             @map("company_name")
+  contactName        String             @map("contact_name")
+  phoneOrEmail       String             @map("phone_or_email")
+  productNeed        String             @map("product_need")
+  expectedQuantityKg Int?               @map("expected_quantity_kg")
+  note               String?
+  status             QuoteRequestStatus @default(NEW)
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+  businessCustomer   BusinessCustomer?  @relation(fields: [businessCustomerId], references: [id])
+
+  @@map("quote_requests")
 }
 
 model Contract {
@@ -412,130 +433,6 @@ model Debt {
   @@map("debts")
 }
 
-model Inventory {
-  id           Int      @id @default(autoincrement())
-  productId    Int      @map("product_id")
-  quantity     Int      @default(0)
-  minQuantity  Int      @default(0) @map("min_quantity")
-  warehouse    String   @default("Kho chinh")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-  product      Product  @relation(fields: [productId], references: [id])
-
-  @@unique([productId, warehouse])
-  @@map("inventories")
-}
-
-model StockMovement {
-  id        Int               @id @default(autoincrement())
-  productId Int               @map("product_id")
-  type      StockMovementType
-  quantity  Int
-  reason    String?
-  reference String?
-  createdAt DateTime          @default(now()) @map("created_at")
-  product   Product           @relation(fields: [productId], references: [id])
-
-  @@map("stock_movements")
-}
-
-model ProductPriceHistory {
-  id          Int      @id @default(autoincrement())
-  productId   Int      @map("product_id")
-  oldPrice    Decimal? @map("old_price") @db.Decimal(12, 2)
-  newPrice    Decimal  @map("new_price") @db.Decimal(12, 2)
-  reason      String?
-  appliedAt   DateTime @default(now()) @map("applied_at")
-  product     Product  @relation(fields: [productId], references: [id])
-
-  @@map("product_price_histories")
-}
-
-model Promotion {
-  id              Int                @id @default(autoincrement())
-  name            String
-  code            String?            @unique
-  discountType    DiscountType       @map("discount_type")
-  discountValue   Decimal            @map("discount_value") @db.Decimal(12, 2)
-  minOrderAmount  Decimal?           @map("min_order_amount") @db.Decimal(12, 2)
-  startAt         DateTime           @map("start_at")
-  endAt           DateTime           @map("end_at")
-  status          PromotionStatus    @default(DRAFT)
-  createdAt       DateTime           @default(now()) @map("created_at")
-  updatedAt       DateTime           @updatedAt @map("updated_at")
-  products        PromotionProduct[]
-
-  @@map("promotions")
-}
-
-model PromotionProduct {
-  id          Int       @id @default(autoincrement())
-  promotionId Int      @map("promotion_id")
-  productId   Int      @map("product_id")
-  promotion   Promotion @relation(fields: [promotionId], references: [id])
-  product     Product   @relation(fields: [productId], references: [id])
-
-  @@unique([promotionId, productId])
-  @@map("promotion_products")
-}
-
-model Cart {
-  id        Int        @id @default(autoincrement())
-  userId    Int        @unique @map("user_id")
-  createdAt DateTime   @default(now()) @map("created_at")
-  updatedAt DateTime   @updatedAt @map("updated_at")
-  user      User       @relation(fields: [userId], references: [id])
-  items     CartItem[]
-
-  @@map("carts")
-}
-
-model CartItem {
-  id        Int      @id @default(autoincrement())
-  cartId    Int      @map("cart_id")
-  productId Int      @map("product_id")
-  quantity  Int
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  cart      Cart     @relation(fields: [cartId], references: [id])
-  product   Product  @relation(fields: [productId], references: [id])
-
-  @@unique([cartId, productId])
-  @@map("cart_items")
-}
-
-model Review {
-  id        Int          @id @default(autoincrement())
-  userId    Int          @map("user_id")
-  productId Int          @map("product_id")
-  orderId   Int?         @map("order_id")
-  rating    Int
-  content   String?
-  status    ReviewStatus @default(PENDING)
-  createdAt DateTime     @default(now()) @map("created_at")
-  updatedAt DateTime     @updatedAt @map("updated_at")
-  user      User         @relation(fields: [userId], references: [id])
-  product   Product      @relation(fields: [productId], references: [id])
-  order     Order?       @relation(fields: [orderId], references: [id])
-
-  @@unique([userId, productId, orderId])
-  @@map("reviews")
-}
-
-model LoyaltyProfile {
-  id          Int      @id @default(autoincrement())
-  userId      Int      @unique @map("user_id")
-  tier        String   @default("REGULAR")
-  points      Int      @default(0)
-  totalSpent  Decimal  @default(0) @map("total_spent") @db.Decimal(14, 2)
-  orderCount  Int      @default(0) @map("order_count")
-  lastPurchaseAt DateTime? @map("last_purchase_at")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  user        User     @relation(fields: [userId], references: [id])
-
-  @@map("loyalty_profiles")
-}
-
 model Supplier {
   id             Int             @id @default(autoincrement())
   name           String          @unique
@@ -551,18 +448,18 @@ model Supplier {
 }
 
 model PurchaseOrder {
-  id            Int                 @id @default(autoincrement())
-  supplierId    Int                 @map("supplier_id")
-  purchaseCode  String              @unique @map("purchase_code")
-  expectedDate  DateTime?           @map("expected_date")
-  totalAmount   Decimal             @default(0) @map("total_amount") @db.Decimal(14, 2)
-  status        PurchaseOrderStatus @default(DRAFT)
-  note          String?
-  createdAt     DateTime            @default(now()) @map("created_at")
-  updatedAt     DateTime            @updatedAt @map("updated_at")
-  supplier      Supplier            @relation(fields: [supplierId], references: [id])
-  items         PurchaseOrderItem[]
-  receipts      GoodsReceipt[]
+  id           Int                 @id @default(autoincrement())
+  supplierId   Int                 @map("supplier_id")
+  purchaseCode String              @unique @map("purchase_code")
+  expectedDate DateTime?           @map("expected_date")
+  receivedAt   DateTime?           @map("received_at")
+  totalAmount  Decimal             @default(0) @map("total_amount") @db.Decimal(14, 2)
+  status       PurchaseOrderStatus @default(DRAFT)
+  note         String?
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+  supplier     Supplier            @relation(fields: [supplierId], references: [id])
+  items        PurchaseOrderItem[]
 
   @@map("purchase_orders")
 }
@@ -570,42 +467,14 @@ model PurchaseOrder {
 model PurchaseOrderItem {
   id              Int           @id @default(autoincrement())
   purchaseOrderId Int           @map("purchase_order_id")
-  productId        Int          @map("product_id")
-  quantity         Int
-  unitCost         Decimal      @map("unit_cost") @db.Decimal(12, 2)
-  lineTotal        Decimal      @map("line_total") @db.Decimal(14, 2)
-  purchaseOrder    PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
-  product          Product       @relation(fields: [productId], references: [id])
+  productId       Int           @map("product_id")
+  quantity        Int
+  unitCost        Decimal       @map("unit_cost") @db.Decimal(12, 2)
+  lineTotal       Decimal       @map("line_total") @db.Decimal(14, 2)
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  product         Product       @relation(fields: [productId], references: [id])
 
   @@map("purchase_order_items")
-}
-
-model GoodsReceipt {
-  id              Int                @id @default(autoincrement())
-  purchaseOrderId Int                @map("purchase_order_id")
-  receiptCode     String             @unique @map("receipt_code")
-  status          GoodsReceiptStatus @default(DRAFT)
-  receivedAt      DateTime?          @map("received_at")
-  note            String?
-  createdAt       DateTime           @default(now()) @map("created_at")
-  purchaseOrder   PurchaseOrder      @relation(fields: [purchaseOrderId], references: [id])
-
-  @@map("goods_receipts")
-}
-
-model AiRecommendation {
-  id          Int      @id @default(autoincrement())
-  userId      Int?     @map("user_id")
-  productId   Int?     @map("product_id")
-  sessionId   String?  @map("session_id")
-  prompt      String
-  answer      String
-  intent      String?
-  createdAt   DateTime @default(now()) @map("created_at")
-  user        User?    @relation(fields: [userId], references: [id])
-  product     Product? @relation(fields: [productId], references: [id])
-
-  @@map("ai_recommendations")
 }
 
 model ChatbotConversation {
@@ -633,31 +502,6 @@ model ChatbotMessage {
   conversation   ChatbotConversation @relation(fields: [conversationId], references: [id])
 
   @@map("chatbot_messages")
-}
-
-model BlogPost {
-  id          Int      @id @default(autoincrement())
-  title       String
-  slug        String   @unique
-  excerpt     String?
-  content     String
-  coverImage  String?  @map("cover_image")
-  isPublished Boolean  @default(false) @map("is_published")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  @@map("blog_posts")
-}
-
-model Faq {
-  id        Int      @id @default(autoincrement())
-  question  String   @unique
-  answer    String
-  isActive  Boolean  @default(true) @map("is_active")
-  sortOrder Int      @default(0) @map("sort_order")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("faqs")
 }
 
 model ContactMessage {

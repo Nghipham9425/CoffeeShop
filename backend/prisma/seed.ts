@@ -3,7 +3,6 @@ import {
   ContractStatus,
   DebtStatus,
   DiscountType,
-  GoodsReceiptStatus,
   InvoiceStatus,
   OrderStatus,
   PaymentMethod,
@@ -127,29 +126,26 @@ async function main() {
     },
   });
 
-  await prisma.inventory.createMany({
-    data: [
-      { productId: robusta.id, quantity: 120, minQuantity: 20, warehouse: "Kho thanh pham" },
-      { productId: espresso.id, quantity: 80, minQuantity: 15, warehouse: "Kho thanh pham" },
-    ],
-    skipDuplicates: true,
+  await prisma.inventory.upsert({
+    where: { productId_warehouse: { productId: robusta.id, warehouse: "Kho thanh pham" } },
+    update: { quantity: 120, minQuantity: 20 },
+    create: {
+      productId: robusta.id,
+      quantity: 120,
+      minQuantity: 20,
+      warehouse: "Kho thanh pham",
+    },
   });
 
-  await prisma.productPriceHistory.createMany({
-    data: [
-      {
-        productId: robusta.id,
-        oldPrice: 135000,
-        newPrice: 145000,
-        reason: "Cap nhat gia niem yet ban le.",
-      },
-      {
-        productId: espresso.id,
-        oldPrice: 175000,
-        newPrice: 185000,
-        reason: "Cap nhat gia theo chi phi hat dau vao.",
-      },
-    ],
+  await prisma.inventory.upsert({
+    where: { productId_warehouse: { productId: espresso.id, warehouse: "Kho thanh pham" } },
+    update: { quantity: 80, minQuantity: 15 },
+    create: {
+      productId: espresso.id,
+      quantity: 80,
+      minQuantity: 15,
+      warehouse: "Kho thanh pham",
+    },
   });
 
   await prisma.stockMovement.createMany({
@@ -186,33 +182,15 @@ async function main() {
     },
   });
 
-  await prisma.promotionProduct.createMany({
-    data: [
-      { promotionId: promotion.id, productId: robusta.id },
-      { promotionId: promotion.id, productId: espresso.id },
-    ],
-    skipDuplicates: true,
-  });
-
-  const cart = await prisma.cart.upsert({
-    where: { userId: customer.id },
-    update: {},
-    create: {
-      userId: customer.id,
-    },
-  });
-
-  await prisma.cartItem.createMany({
-    data: [
-      { cartId: cart.id, productId: robusta.id, quantity: 1 },
-      { cartId: cart.id, productId: espresso.id, quantity: 1 },
-    ],
-    skipDuplicates: true,
-  });
-
   await prisma.loyaltyProfile.upsert({
     where: { userId: customer.id },
-    update: {},
+    update: {
+      tier: "VIP",
+      points: 320,
+      totalSpent: 545000,
+      orderCount: 1,
+      lastPurchaseAt: new Date(),
+    },
     create: {
       userId: customer.id,
       tier: "VIP",
@@ -229,6 +207,7 @@ async function main() {
     create: {
       userId: customer.id,
       addressId: address.id,
+      promotionId: promotion.id,
       orderCode: "PTCW-RETAIL-0001",
       customerName: "Khach le demo",
       customerPhone: "0909000001",
@@ -279,30 +258,20 @@ async function main() {
       carrier: "Giao hang nhanh",
       trackingCode: "GHN-DEMO-0001",
       status: ShipmentStatus.PACKED,
+      note: "Don hang da dong goi, cho lay hang.",
     },
   });
 
-  const shipment = await prisma.shipment.findUniqueOrThrow({
-    where: { orderId: retailOrder.id },
-  });
-
-  await prisma.deliveryLog.createMany({
-    data: [
-      {
-        shipmentId: shipment.id,
-        status: "CREATED",
-        note: "Da tao van don demo.",
+  await prisma.review.upsert({
+    where: {
+      userId_productId_orderId: {
+        userId: customer.id,
+        productId: robusta.id,
+        orderId: retailOrder.id,
       },
-      {
-        shipmentId: shipment.id,
-        status: "PACKED",
-        note: "Don hang da dong goi, cho lay hang.",
-      },
-    ],
-  });
-
-  await prisma.review.create({
-    data: {
+    },
+    update: {},
+    create: {
       userId: customer.id,
       productId: robusta.id,
       orderId: retailOrder.id,
@@ -397,15 +366,16 @@ async function main() {
     },
   });
 
-  const purchaseOrder = await prisma.purchaseOrder.upsert({
+  await prisma.purchaseOrder.upsert({
     where: { purchaseCode: "PO-0001" },
     update: {},
     create: {
       supplierId: supplier.id,
       purchaseCode: "PO-0001",
       expectedDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+      receivedAt: new Date(),
       totalAmount: 18000000,
-      status: PurchaseOrderStatus.ORDERED,
+      status: PurchaseOrderStatus.RECEIVED,
       note: "Dat mua hang dau vao cho san xuat.",
       items: {
         create: [
@@ -426,18 +396,6 @@ async function main() {
     },
   });
 
-  await prisma.goodsReceipt.upsert({
-    where: { receiptCode: "GR-0001" },
-    update: {},
-    create: {
-      purchaseOrderId: purchaseOrder.id,
-      receiptCode: "GR-0001",
-      status: GoodsReceiptStatus.COMPLETED,
-      receivedAt: new Date(),
-      note: "Phieu nhap demo cho kho.",
-    },
-  });
-
   const conversation = await prisma.chatbotConversation.create({
     data: {
       userId: customer.id,
@@ -453,60 +411,12 @@ async function main() {
           {
             sender: "BOT",
             content:
-              "Ben em co ban le online va ho tro bao gia rieng cho doanh nghiep. Anh/chi can so luong bao nhieu kg moi thang a?",
-            intent: "ask_quantity",
+              "Nen chon Robusta rang moc neu can vi dam de pha phin. Neu mua si, minh se ghi nhan so luong de nhan vien sales bao gia.",
+            intent: "ai_buying_advice",
           },
         ],
       },
     },
-  });
-
-  await prisma.aiRecommendation.create({
-    data: {
-      userId: customer.id,
-      productId: robusta.id,
-      sessionId: "ai-demo-session-001",
-      prompt: "Toi can ca phe dam de pha phin cho quan nho",
-      answer:
-        "Nen chon Robusta rang moc vi vi dam, gia tot va phu hop pha phin. Neu mua si co the gui yeu cau bao gia.",
-      intent: "buying_advice",
-    },
-  });
-
-  await prisma.blogPost.upsert({
-    where: { slug: "quy-trinh-rang-ca-phe-cho-khach-b2b" },
-    update: {},
-    create: {
-      title: "Quy trinh rang ca phe cho khach B2B",
-      slug: "quy-trinh-rang-ca-phe-cho-khach-b2b",
-      excerpt: "Cach nha may tiep nhan yeu cau, rang mau, dong goi va giao hang.",
-      content:
-        "Bai viet mau ve quy trinh lam viec voi quan ca phe, dai ly va doanh nghiep private label.",
-      isPublished: true,
-    },
-  });
-
-  await prisma.faq.createMany({
-    data: [
-      {
-        question: "Khach le co thanh toan online duoc khong?",
-        answer: "Co. Khach le co the thanh toan qua VNPAY, Momo, ZaloPay hoac COD.",
-        sortOrder: 1,
-      },
-      {
-        question: "Khach doanh nghiep co thanh toan online khong?",
-        answer:
-          "Khong uu tien thanh toan online. Don B2B se di theo bao gia, hop dong, hoa don va cong no.",
-        sortOrder: 2,
-      },
-      {
-        question: "Chatbot dung de lam gi?",
-        answer:
-          "Chatbot ho tro tu van san pham, ghi nhan nhu cau bao gia va chuyen lead cho nhan vien sales.",
-        sortOrder: 3,
-      },
-    ],
-    skipDuplicates: true,
   });
 
   await prisma.contactMessage.create({

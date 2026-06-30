@@ -70,6 +70,52 @@ Username: postgres
 Password: postgres
 ```
 
+## Cac bang chinh trong database
+
+Database hien tai duoc thu gon con 24 bang, vua du cho do an thuong mai dien tu ca phe:
+
+```text
+users
+addresses
+categories
+products
+inventories
+stock_movements
+promotions
+orders
+order_items
+payments
+shipments
+reviews
+loyalty_profiles
+business_customers
+quote_requests
+contracts
+invoices
+debts
+suppliers
+purchase_orders
+purchase_order_items
+chatbot_conversations
+chatbot_messages
+contact_messages
+```
+
+Nhom chuc nang duoc bao phu:
+
+```text
+- Tai khoan, khach hang, dia chi
+- San pham, danh muc, ton kho
+- Khuyen mai
+- Don hang, thanh toan, giao nhan, huy/hoan tien
+- Danh gia san pham
+- Khach hang than thiet/VIP
+- B2B: bao gia, hop dong, hoa don, cong no
+- Mua hang/nhap hang tu nha cung cap
+- Chatbot tu van
+- Lien he
+```
+
 ## Chay backend local
 
 ```bash
@@ -80,6 +126,12 @@ npm run db:generate
 npm run db:migrate
 npm run db:seed
 npm run dev
+```
+
+Neu chay tren PowerShell va chua co file `.env`, dung:
+
+```powershell
+Copy-Item .env.example .env
 ```
 
 Backend API:

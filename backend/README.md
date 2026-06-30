@@ -37,13 +37,17 @@ Tu thu muc goc `D:\Coffee_B2B`:
 docker compose up -d
 ```
 
-Compose hien tai chi chay PostgreSQL:
+Compose hien tai chay PostgreSQL va pgAdmin:
 
 ```text
 PostgreSQL: localhost:5432
 Database:   coffee_b2b
 User:       postgres
 Password:   postgres
+
+pgAdmin:    http://localhost:5050
+Email:      admin@phutaicoffee.vn
+Password:   admin123
 ```
 
 ## Chay backend local
@@ -55,6 +59,12 @@ npm run db:generate
 npm run db:migrate
 npm run db:seed
 npm run dev
+```
+
+Neu dung PowerShell tren Windows:
+
+```powershell
+Copy-Item .env.example .env
 ```
 
 API mac dinh:
@@ -82,6 +92,16 @@ Sau khi tao database PostgreSQL `coffee_b2b` va sua `DATABASE_URL` trong `.env`:
 ```bash
 npm run db:migrate
 npm run db:seed
+```
+
+Database hien tai gom 24 bang chinh:
+
+```text
+users, addresses, categories, products, inventories, stock_movements,
+promotions, orders, order_items, payments, shipments, reviews,
+loyalty_profiles, business_customers, quote_requests, contracts,
+invoices, debts, suppliers, purchase_orders, purchase_order_items,
+chatbot_conversations, chatbot_messages, contact_messages
 ```
 
 Tai khoan seed:
