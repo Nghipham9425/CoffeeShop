@@ -1,6 +1,9 @@
 import { quoteRequestData } from "../../data/QuoteRequest/QuoteRequest.data.js";
 import type { QuoteRequestModel } from "../../models/QuoteRequest/QuoteRequest.model.js";
-import type { CreateQuoteRequestInput } from "../../validators/QuoteRequest/QuoteRequest.validator.js";
+import type {
+  CreateQuoteRequestInput,
+  UpdateQuoteRequestStatusInput,
+} from "../../validators/QuoteRequest/QuoteRequest.validator.js";
 
 function mapQuoteRequest(
   quoteRequest: Awaited<ReturnType<typeof quoteRequestData.findMany>>[number],
@@ -24,8 +27,24 @@ export const quoteRequestService = {
     return quoteRequests.map(mapQuoteRequest);
   },
 
+  async getQuoteRequestById(id: number) {
+    const quoteRequest = await quoteRequestData.findById(id);
+    return quoteRequest ? mapQuoteRequest(quoteRequest) : null;
+  },
+
   async createQuoteRequest(input: CreateQuoteRequestInput) {
     const quoteRequest = await quoteRequestData.create(input);
+    return mapQuoteRequest(quoteRequest);
+  },
+
+  async updateQuoteRequestStatus(id: number, input: UpdateQuoteRequestStatusInput) {
+    const existingQuoteRequest = await quoteRequestData.findById(id);
+
+    if (!existingQuoteRequest) {
+      throw new Error("QUOTE_REQUEST_NOT_FOUND");
+    }
+
+    const quoteRequest = await quoteRequestData.updateStatus(id, input);
     return mapQuoteRequest(quoteRequest);
   },
 };

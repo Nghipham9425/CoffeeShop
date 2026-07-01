@@ -110,6 +110,12 @@ Seed hiện có:
 POST /api/auth/register
 POST /api/auth/login
 
+POST /api/contact-messages
+GET  /api/contact-messages                  ADMIN/SALES
+GET  /api/contact-messages/:id              ADMIN/SALES
+PATCH /api/contact-messages/:id/read-status ADMIN/SALES
+DELETE /api/contact-messages/:id            ADMIN
+
 GET  /api/categories
 GET  /api/categories/:id
 POST /api/categories              ADMIN/SALES
@@ -125,6 +131,8 @@ POST /api/products/:id/prices     ADMIN/SALES
 
 POST /api/quote-requests
 GET  /api/quote-requests          ADMIN/SALES
+GET  /api/quote-requests/:id      ADMIN/SALES
+PATCH /api/quote-requests/:id/status ADMIN/SALES
 GET  /api/health
 ```
 

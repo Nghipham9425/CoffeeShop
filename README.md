@@ -146,6 +146,7 @@ GET  /api/categories
 GET  /api/categories/:id
 GET  /api/products
 GET  /api/products/:id
+POST /api/contact-messages
 POST /api/auth/register
 POST /api/auth/login
 POST /api/quote-requests
@@ -161,12 +162,21 @@ DELETE /api/categories/:id
 POST   /api/products
 PATCH  /api/products/:id
 POST   /api/products/:id/prices
+
+GET    /api/contact-messages
+GET    /api/contact-messages/:id
+PATCH  /api/contact-messages/:id/read-status
+
+GET    /api/quote-requests
+GET    /api/quote-requests/:id
+PATCH  /api/quote-requests/:id/status
 ```
 
 Admin:
 
 ```text
 DELETE /api/products/:id
+DELETE /api/contact-messages/:id
 ```
 
 ## Các bảng chính trong database

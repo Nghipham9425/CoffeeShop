@@ -13,3 +13,15 @@ quoteRequestRoutes.get(
   authorizeRoles(UserRole.ADMIN, UserRole.SALES),
   asyncHandler(quoteRequestController.getQuoteRequests),
 );
+quoteRequestRoutes.get(
+  "/:id",
+  authMiddleware,
+  authorizeRoles(UserRole.ADMIN, UserRole.SALES),
+  asyncHandler(quoteRequestController.getQuoteRequestById),
+);
+quoteRequestRoutes.patch(
+  "/:id/status",
+  authMiddleware,
+  authorizeRoles(UserRole.ADMIN, UserRole.SALES),
+  asyncHandler(quoteRequestController.updateQuoteRequestStatus),
+);
