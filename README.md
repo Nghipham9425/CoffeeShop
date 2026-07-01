@@ -1,23 +1,26 @@
-# Phu Tai Coffee Works
+# Phú Tài Coffee Works
 
-Do an website thuong mai dien tu cho nha may san xuat va mua di ban lai ca phe. Du an co 2 phan:
+Đồ án website thương mại điện tử cho mô hình nhà máy sản xuất, gia công và mua đi bán lại cà phê B2B/B2C.
 
-- `frontend`: React + Vite, giao dien website gioi thieu, san pham, lien he, mua le.
-- `backend`: Node.js + Express + TypeScript + Prisma + PostgreSQL, API cho san pham, tai khoan, bao gia, don hang, thanh toan, ton kho, chatbot va admin.
+- `frontend`: React + Vite, giao diện giới thiệu, sản phẩm, liên hệ và mua lẻ.
+- `backend`: Node.js + Express + TypeScript + Prisma + PostgreSQL, API cho tài khoản, danh mục, sản phẩm, giá, báo giá, đơn hàng, thanh toán, tồn kho, chatbot và admin.
+- `docs`: tài liệu kế hoạch, use case và mô hình hóa yêu cầu.
 
-## Yeu cau cai dat
+## Yêu cầu cài đặt
 
 - Node.js 22+
 - npm 10+
 - Docker Desktop
 - Git
 
-## Cau truc thu muc
+## Cấu trúc thư mục
 
 ```text
 Coffee_B2B/
   backend/
     prisma/
+      schema.prisma
+      seed.ts
     src/
       config/
       controllers/
@@ -34,15 +37,15 @@ Coffee_B2B/
   docker-compose.yml
 ```
 
-## Chay database va pgAdmin
+## Chạy PostgreSQL và pgAdmin
 
-Tai thu muc goc du an:
+Tại thư mục gốc dự án:
 
 ```bash
 docker compose up -d
 ```
 
-Thong tin PostgreSQL:
+Thông tin PostgreSQL:
 
 ```text
 Host: localhost
@@ -60,7 +63,7 @@ Email: admin@phutaicoffee.vn
 Password: admin123
 ```
 
-Khi tao server trong pgAdmin:
+Khi tạo server trong pgAdmin:
 
 ```text
 Host name/address: postgres
@@ -70,15 +73,112 @@ Username: postgres
 Password: postgres
 ```
 
-## Cac bang chinh trong database
+## Chạy backend local
 
-Database hien tai duoc thu gon con 24 bang, vua du cho do an thuong mai dien tu ca phe:
+```bash
+cd backend
+npm install
+cp .env.example .env
+npm run db:generate
+npm run db:push
+npm run db:seed
+npm run dev
+```
+
+Nếu dùng PowerShell trên Windows:
+
+```powershell
+cd backend
+npm install
+Copy-Item .env.example .env
+npm run db:generate
+npm run db:push
+npm run db:seed
+npm run dev
+```
+
+Backend API:
+
+```text
+http://localhost:4000
+http://localhost:4000/api
+```
+
+## Seed data
+
+Lệnh seed:
+
+```bash
+cd backend
+npm run db:seed
+```
+
+Dữ liệu mẫu có tiếng Việt rõ ràng, gồm:
+
+- Danh mục: `Cà phê rang xay`, `Gia công OEM`.
+- Sản phẩm: `Robusta rang mộc`, `Espresso Blend`, `Gia công nhãn riêng OEM`.
+- Giá bán lẻ/B2B/VIP trong bảng `product_prices`.
+- Đơn hàng khách lẻ thanh toán online demo.
+- Khách doanh nghiệp B2B, báo giá, hợp đồng, hóa đơn và công nợ.
+- Dữ liệu tồn kho, nhập hàng, đánh giá, chatbot và liên hệ.
+
+Tài khoản admin seed:
+
+```text
+Email: admin@phutaicoffee.vn
+Password: Admin@123
+```
+
+Tài khoản khách lẻ seed:
+
+```text
+Email: khachle@example.com
+Password: Customer@123
+```
+
+## Endpoint chính
+
+Public:
+
+```text
+GET  /api/health
+GET  /api/categories
+GET  /api/categories/:id
+GET  /api/products
+GET  /api/products/:id
+POST /api/auth/register
+POST /api/auth/login
+POST /api/quote-requests
+```
+
+Admin/Sales:
+
+```text
+POST   /api/categories
+PATCH  /api/categories/:id
+DELETE /api/categories/:id
+
+POST   /api/products
+PATCH  /api/products/:id
+POST   /api/products/:id/prices
+```
+
+Admin:
+
+```text
+DELETE /api/products/:id
+```
+
+## Các bảng chính trong database
+
+Database hiện tại được thu gọn còn 25 bảng, vừa đủ cho đồ án thương mại điện tử cà phê:
 
 ```text
 users
 addresses
 categories
 products
+product_prices
 inventories
 stock_movements
 promotions
@@ -101,63 +201,9 @@ chatbot_messages
 contact_messages
 ```
 
-Nhom chuc nang duoc bao phu:
+## Chạy frontend local
 
-```text
-- Tai khoan, khach hang, dia chi
-- San pham, danh muc, ton kho
-- Khuyen mai
-- Don hang, thanh toan, giao nhan, huy/hoan tien
-- Danh gia san pham
-- Khach hang than thiet/VIP
-- B2B: bao gia, hop dong, hoa don, cong no
-- Mua hang/nhap hang tu nha cung cap
-- Chatbot tu van
-- Lien he
-```
-
-## Chay backend local
-
-```bash
-cd backend
-copy .env.example .env
-npm install
-npm run db:generate
-npm run db:migrate
-npm run db:seed
-npm run dev
-```
-
-Neu chay tren PowerShell va chua co file `.env`, dung:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Backend API:
-
-```text
-http://localhost:4000
-http://localhost:4000/api
-```
-
-Tai khoan admin seed:
-
-```text
-Email: admin@phutaicoffee.vn
-Password: Admin@123
-```
-
-Tai khoan khach le seed:
-
-```text
-Email: khachle@example.com
-Password: Customer@123
-```
-
-## Chay frontend local
-
-Mo terminal khac:
+Mở terminal khác:
 
 ```bash
 cd frontend
@@ -165,7 +211,7 @@ npm install
 npm run dev
 ```
 
-Frontend mac dinh:
+Frontend mặc định:
 
 ```text
 http://localhost:5173
@@ -174,30 +220,25 @@ http://localhost:5173
 ## Scripts backend
 
 ```bash
-npm run dev          # chay server local
+npm run dev          # chạy server local
 npm run build        # build TypeScript
-npm run typecheck    # kiem tra type
+npm run typecheck    # kiểm tra type
 npm run db:generate  # generate Prisma Client
-npm run db:migrate   # tao migration va cap nhat DB
-npm run db:seed      # them du lieu mau
+npm run db:push      # đồng bộ schema Prisma vào PostgreSQL
+npm run db:migrate   # tạo migration khi cần làm version DB nghiêm túc
+npm run db:seed      # thêm dữ liệu mẫu
 ```
 
-## Scripts frontend
+## Ghi chú
 
-```bash
-npm run dev
-npm run build
-npm run preview
-```
-
-## Ghi chu
-
-- File `.env` khong commit len GitHub.
-- Docker hien chi dung cho PostgreSQL va pgAdmin. Backend va frontend chay local bang npm de code nhanh.
-- Neu muon xoa toan bo du lieu DB Docker:
+- File `.env` không commit lên GitHub.
+- Docker hiện chỉ dùng cho PostgreSQL và pgAdmin. Backend/frontend chạy local bằng npm để code nhanh.
+- Nếu muốn reset toàn bộ database Docker:
 
 ```bash
 docker compose down -v
+docker compose up -d
+cd backend
+npm run db:push
+npm run db:seed
 ```
-
-Lenh tren se xoa volume PostgreSQL, chi dung khi muon reset DB.

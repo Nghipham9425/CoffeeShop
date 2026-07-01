@@ -1,43 +1,54 @@
-# Phu Tai Coffee Works Backend
+# Phú Tài Coffee Works Backend
 
-Backend Node.js + Express + TypeScript + Prisma + PostgreSQL cho do an nha may san xuat ca phe B2B/B2C.
+Backend Node.js + Express + TypeScript + Prisma + PostgreSQL cho đồ án nhà máy sản xuất cà phê B2B/B2C.
 
-## Cau truc
+## Cấu trúc module
 
 ```text
 src/
-  config/                    cau hinh env
+  config/
   controllers/
-    Product/Product.controller.ts
     Auth/Auth.controller.ts
+    Category/Category.controller.ts
+    Product/Product.controller.ts
+    QuoteRequest/QuoteRequest.controller.ts
   data/
-    Product/Product.data.ts  Prisma query theo module
     Auth/User.data.ts
-  middleware/                middleware dung chung
+    Category/Category.data.ts
+    Product/Product.data.ts
+    QuoteRequest/QuoteRequest.data.ts
+  middleware/
   models/
-    Product/Product.model.ts type/model dung trong ung dung
+    Category/Category.model.ts
+    Product/Product.model.ts
   routes/
-    Product/Product.routes.ts
     Auth/Auth.routes.ts
+    Category/Category.routes.ts
+    Product/Product.routes.ts
+    QuoteRequest/QuoteRequest.routes.ts
   services/
-    Product/Product.service.ts
     Auth/Auth.service.ts
-  tests/                     test sau nay
-  utils/                     ham tien ich
+    Category/Category.service.ts
+    Product/Product.service.ts
+    QuoteRequest/QuoteRequest.service.ts
+  tests/
+  utils/
   validators/
-    Product/Product.validator.ts
     Auth/Auth.validator.ts
+    Category/Category.validator.ts
+    Product/Product.validator.ts
+    QuoteRequest/QuoteRequest.validator.ts
 ```
 
-## Chay database bang Docker
+## Chạy database bằng Docker
 
-Tu thu muc goc `D:\Coffee_B2B`:
+Từ thư mục gốc `D:\Coffee_B2B`:
 
 ```bash
 docker compose up -d
 ```
 
-Compose hien tai chay PostgreSQL va pgAdmin:
+Compose hiện tại chỉ chạy PostgreSQL và pgAdmin:
 
 ```text
 PostgreSQL: localhost:5432
@@ -50,63 +61,81 @@ Email:      admin@phutaicoffee.vn
 Password:   admin123
 ```
 
-## Chay backend local
+## Chạy backend local
 
 ```bash
-cp .env.example .env
 npm install
+cp .env.example .env
 npm run db:generate
-npm run db:migrate
+npm run db:push
 npm run db:seed
 npm run dev
 ```
 
-Neu dung PowerShell tren Windows:
+PowerShell:
 
 ```powershell
+npm install
 Copy-Item .env.example .env
+npm run db:generate
+npm run db:push
+npm run db:seed
+npm run dev
 ```
 
-API mac dinh:
+API mặc định:
 
 ```text
 http://localhost:4000/api
 ```
 
-## Endpoint mau
+## Seed data
+
+```bash
+npm run db:seed
+```
+
+Seed hiện có:
+
+- Admin: `admin@phutaicoffee.vn` / `Admin@123`
+- Khách lẻ: `khachle@example.com` / `Customer@123`
+- Danh mục, sản phẩm, giá B2C/B2B/VIP, tồn kho.
+- Đơn hàng, thanh toán online demo, giao nhận, đánh giá.
+- Khách B2B, báo giá, hợp đồng, hóa đơn, công nợ.
+- Chatbot và liên hệ.
+
+## Endpoint mẫu
 
 ```text
 POST /api/auth/register
 POST /api/auth/login
+
+GET  /api/categories
+GET  /api/categories/:id
+POST /api/categories              ADMIN/SALES
+PATCH /api/categories/:id         ADMIN/SALES
+DELETE /api/categories/:id        ADMIN
+
 GET  /api/products
 GET  /api/products/:id
+POST /api/products                ADMIN/SALES
+PATCH /api/products/:id           ADMIN/SALES
+DELETE /api/products/:id          ADMIN
+POST /api/products/:id/prices     ADMIN/SALES
+
 POST /api/quote-requests
-GET  /api/quote-requests  Bearer token, role ADMIN/SALES
+GET  /api/quote-requests          ADMIN/SALES
 GET  /api/health
 ```
 
 ## Database
 
-Sau khi tao database PostgreSQL `coffee_b2b` va sua `DATABASE_URL` trong `.env`:
-
-```bash
-npm run db:migrate
-npm run db:seed
-```
-
-Database hien tai gom 24 bang chinh:
+Database hiện tại gồm 25 bảng chính:
 
 ```text
-users, addresses, categories, products, inventories, stock_movements,
+users, addresses, categories, products, product_prices, inventories, stock_movements,
 promotions, orders, order_items, payments, shipments, reviews,
 loyalty_profiles, business_customers, quote_requests, contracts,
 invoices, debts, suppliers, purchase_orders, purchase_order_items,
 chatbot_conversations, chatbot_messages, contact_messages
-```
-
-Tai khoan seed:
-
-```text
-Email: admin@phutaicoffee.vn
-Password: Admin@123
 ```
