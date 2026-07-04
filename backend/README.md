@@ -87,7 +87,24 @@ API mặc định:
 
 ```text
 http://localhost:4000/api
+http://localhost:4000/api-docs
 ```
+
+## Swagger API Docs
+
+Sau khi chạy backend:
+
+```text
+http://localhost:4000/api-docs
+```
+
+Cách dùng endpoint cần đăng nhập:
+
+1. Gọi `POST /api/auth/login`.
+2. Copy `token` trả về.
+3. Bấm `Authorize` ở góc phải Swagger.
+4. Nhập `Bearer <token>`.
+5. Gọi các API admin/sales như tạo danh mục, tạo sản phẩm, cập nhật báo giá.
 
 ## Seed data
 

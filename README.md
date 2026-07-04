@@ -102,7 +102,16 @@ Backend API:
 ```text
 http://localhost:4000
 http://localhost:4000/api
+http://localhost:4000/api-docs
 ```
+
+Swagger API Docs:
+
+- Mở `http://localhost:4000/api-docs`.
+- Đăng nhập bằng `POST /api/auth/login` để lấy `token`.
+- Bấm nút `Authorize` trong Swagger.
+- Nhập token theo dạng `Bearer <token>`.
+- Các endpoint có khóa sẽ gọi được bằng tài khoản admin/sales seed.
 
 ## Seed data
 
