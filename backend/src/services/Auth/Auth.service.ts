@@ -24,6 +24,7 @@ export const authService = {
     const user = await userData.create({
       fullName: input.fullName,
       email: input.email,
+      phone: input.phone,
       passwordHash,
     });
     const token = signToken({ userId: user.id, role: user.role });
@@ -51,6 +52,7 @@ export const authService = {
         id: user.id,
         fullName: user.fullName,
         email: user.email,
+        phone: user.phone,
         role: user.role,
         isActive: user.isActive,
       },

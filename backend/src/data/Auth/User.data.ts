@@ -14,19 +14,21 @@ export const userData = {
         id: true,
         fullName: true,
         email: true,
+        phone: true,
         role: true,
         isActive: true,
       },
     });
   },
 
-  create(data: { fullName: string; email: string; passwordHash: string }) {
+  create(data: { fullName: string; email: string; phone?: string; passwordHash: string }) {
     return prisma.user.create({
       data,
       select: {
         id: true,
         fullName: true,
         email: true,
+        phone: true,
         role: true,
         isActive: true,
       },
