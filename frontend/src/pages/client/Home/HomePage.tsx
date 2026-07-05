@@ -1,8 +1,8 @@
 import { NavLink } from "react-router-dom";
-import { FeatureGrid } from "../../components/home/FeatureGrid";
-import { ImageCardGrid } from "../../components/home/ImageCardGrid";
-import { SectionHeading } from "../../components/home/SectionHeading";
-import { StatsGrid } from "../../components/home/StatsGrid";
+import { FeatureGrid } from "../../../components/home/FeatureGrid";
+import { ImageCardGrid } from "../../../components/home/ImageCardGrid";
+import { SectionHeading } from "../../../components/home/SectionHeading";
+import { StatsGrid } from "../../../components/home/StatsGrid";
 import { categories, cleanFeatures, posts, stats, strengths, team } from "./homeData";
 
 export function HomePage() {

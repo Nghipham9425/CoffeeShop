@@ -1,8 +1,8 @@
-import { ProductMockup } from "../../components/ProductMockup";
-import { Badge } from "../../components/ui/badge";
-import { Button } from "../../components/ui/button";
-import { Card, CardContent } from "../../components/ui/card";
-import { products } from "../../data/site";
+import { ProductMockup } from "../../../components/ProductMockup";
+import { Badge } from "../../../components/ui/badge";
+import { Button } from "../../../components/ui/button";
+import { Card, CardContent } from "../../../components/ui/card";
+import { products } from "../../../data/site";
 
 export function ProductsPage() {
   return (
