@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { MailCheck, RotateCw } from "lucide-react";
+import { MailCheck, RotateCw, Trash2 } from "lucide-react";
 import { AdminPanel } from "../../../components/admin/AdminPanel";
 import { AdminStatusBadge } from "../../../components/admin/AdminStatusBadge";
 import { Button } from "../../../components/ui/button";
@@ -51,6 +51,23 @@ export function ContactsPage() {
     }
   }
 
+  async function deleteMessage(message: ContactMessage) {
+    if (!token) return;
+    if (!window.confirm(`Xóa tin nhắn của ${message.fullName}?`)) return;
+
+    setUpdatingId(message.id);
+    setError("");
+
+    try {
+      await adminApi.deleteContactMessage(token, message.id);
+      setMessages((current) => current.filter((item) => item.id !== message.id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không xóa được tin nhắn");
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
   return (
     <AdminPageShell
       title="Chăm sóc khách hàng"
@@ -86,16 +103,28 @@ export function ContactsPage() {
                   <p className="text-sm font-black text-[#553B2F]">{message.subject ?? "Không có tiêu đề"}</p>
                   <p className="mt-2 text-sm font-semibold leading-6 text-[#7a5547]">{message.message}</p>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={updatingId === message.id}
-                  onClick={() => toggleRead(message)}
-                  className="rounded-lg border-[#C7A792] text-[#553B2F] hover:bg-[#E8D3C7]"
-                >
-                  <MailCheck size={16} />
-                  {message.isRead ? "Đánh dấu chưa đọc" : "Đánh dấu đã đọc"}
-                </Button>
+                <div className="flex flex-wrap gap-2 xl:justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={updatingId === message.id}
+                    onClick={() => toggleRead(message)}
+                    className="rounded-lg border-[#C7A792] text-[#553B2F] hover:bg-[#E8D3C7]"
+                  >
+                    <MailCheck size={16} />
+                    {message.isRead ? "Đánh dấu chưa đọc" : "Đánh dấu đã đọc"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={updatingId === message.id}
+                    onClick={() => deleteMessage(message)}
+                    className="rounded-lg border-red-200 text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 size={16} />
+                    Xóa
+                  </Button>
+                </div>
               </article>
             ))}
           </div>

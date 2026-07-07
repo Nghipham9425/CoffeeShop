@@ -22,7 +22,8 @@ export type Category = {
 
 export type ProductPrice = {
   id: number;
-  priceType: string;
+  productId?: number;
+  priceType: "RETAIL" | "WHOLESALE" | "VIP" | "B2B";
   minQuantity: number;
   price: number;
   startAt: string | null;
@@ -75,6 +76,156 @@ export type HealthStatus = {
   timestamp: string;
 };
 
+export type AdminOrder = {
+  id: number;
+  orderCode: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string | null;
+  subtotal: number;
+  shippingFee: number;
+  discountAmount: number;
+  totalAmount: number;
+  note: string | null;
+  cancelReason: string | null;
+  refundAmount: number | null;
+  status: "PENDING" | "CONFIRMED" | "PACKING" | "SHIPPING" | "COMPLETED" | "CANCELLED";
+  createdAt: string;
+  updatedAt: string;
+  items: Array<{
+    id: number;
+    productId: number;
+    productName: string;
+    unit: string;
+    quantity: number;
+    unitPrice: number;
+    lineTotal: number;
+  }>;
+  payments: Array<{
+    id: number;
+    method: "COD" | "BANK_TRANSFER" | "MOMO" | "VNPAY" | "ZALOPAY";
+    status: "PENDING" | "PAID" | "FAILED" | "REFUNDED";
+    amount: number;
+    transactionCode: string | null;
+    paidAt: string | null;
+  }>;
+  shipment: {
+    id: number;
+    carrier: string | null;
+    trackingCode: string | null;
+    status: "WAITING" | "PACKED" | "SHIPPED" | "DELIVERED" | "RETURNED";
+    note: string | null;
+  } | null;
+};
+
+export type AdminInventory = {
+  id: number;
+  productId: number;
+  productName: string;
+  categoryName: string;
+  quantity: number;
+  minQuantity: number;
+  warehouse: string;
+  isLowStock: boolean;
+  updatedAt: string;
+};
+
+export type RetailCustomer = {
+  id: number;
+  fullName: string;
+  email: string;
+  phone: string | null;
+  isActive: boolean;
+  createdAt: string;
+  orderCount: number;
+  reviewCount: number;
+  loyalty: {
+    tier: string;
+    points: number;
+    totalSpent: number;
+    orderCount: number;
+  } | null;
+};
+
+export type BusinessCustomer = {
+  id: number;
+  companyName: string;
+  taxCode: string | null;
+  contactName: string;
+  phone: string;
+  email: string | null;
+  address: string | null;
+  note: string | null;
+  createdAt: string;
+  quoteRequestCount: number;
+  contractCount: number;
+  invoiceCount: number;
+  debtCount: number;
+};
+
+export type ReportOverview = {
+  productCount: number;
+  categoryCount: number;
+  orderCount: number;
+  pendingOrderCount: number;
+  completedOrderCount: number;
+  quoteCount: number;
+  unreadContactCount: number;
+  retailCustomerCount: number;
+  businessCustomerCount: number;
+  revenueLast30Days: number;
+  lowStockItems: Array<{
+    id: number;
+    productName: string;
+    quantity: number;
+    minQuantity: number;
+    warehouse: string;
+  }>;
+  recentOrders: Array<{
+    id: number;
+    orderCode: string;
+    customerName: string;
+    status: AdminOrder["status"];
+    totalAmount: number;
+    createdAt: string;
+  }>;
+  topProducts: Array<{
+    productId: number;
+    productName: string;
+    quantity: number;
+    revenue: number;
+  }>;
+};
+
+export type CategoryPayload = {
+  name: string;
+  slug?: string;
+  description?: string;
+  isActive?: boolean;
+};
+
+export type ProductPayload = {
+  categoryId: number;
+  name: string;
+  slug?: string;
+  description?: string;
+  unit?: string;
+  price?: number;
+  minimumOrderKg?: number;
+  imageUrl?: string;
+  isRetail?: boolean;
+  isB2b?: boolean;
+};
+
+export type ProductPricePayload = {
+  priceType: ProductPrice["priceType"];
+  minQuantity: number;
+  price: number;
+  startAt?: string;
+  endAt?: string;
+  isActive?: boolean;
+};
+
 type LoginResponse = {
   user: AdminUser;
   token: string;
@@ -91,7 +242,10 @@ async function request<T>(path: string, options: RequestInit = {}) {
 
   if (!response.ok) {
     const body = await response.json().catch(() => null);
-    throw new Error(body?.message ?? `API lỗi ${response.status}`);
+    const firstIssue = Array.isArray(body?.errors) ? body.errors[0] : null;
+    const issuePath = Array.isArray(firstIssue?.path) && firstIssue.path.length ? `${firstIssue.path.join(".")}: ` : "";
+    const issueMessage = firstIssue?.message ? `${issuePath}${firstIssue.message}` : "";
+    throw new Error(issueMessage || body?.message || `API lỗi ${response.status}`);
   }
 
   if (response.status === 204) {
@@ -105,6 +259,19 @@ function authHeaders(token: string) {
   return {
     Authorization: `Bearer ${token}`,
   };
+}
+
+function buildQuery(params: Record<string, string | number | boolean | undefined>) {
+  const query = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== "") {
+      query.set(key, String(value));
+    }
+  });
+
+  const value = query.toString();
+  return value ? `?${value}` : "";
 }
 
 export const adminAuth = {
@@ -148,12 +315,66 @@ export const adminApi = {
     return request<HealthStatus>("/health");
   },
 
-  categories() {
-    return request<Category[]>("/categories");
+  categories(params: { keyword?: string; includeInactive?: boolean } = {}) {
+    return request<Category[]>(`/categories${buildQuery(params)}`);
   },
 
-  products() {
-    return request<Product[]>("/products");
+  createCategory(token: string, payload: CategoryPayload) {
+    return request<Category>("/categories", {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify(payload),
+    });
+  },
+
+  updateCategory(token: string, id: number, payload: Partial<CategoryPayload>) {
+    return request<Category>(`/categories/${id}`, {
+      method: "PATCH",
+      headers: authHeaders(token),
+      body: JSON.stringify(payload),
+    });
+  },
+
+  deleteCategory(token: string, id: number) {
+    return request<void>(`/categories/${id}`, {
+      method: "DELETE",
+      headers: authHeaders(token),
+    });
+  },
+
+  products(params: { keyword?: string; categorySlug?: string; isRetail?: boolean; isB2b?: boolean } = {}) {
+    return request<Product[]>(`/products${buildQuery(params)}`);
+  },
+
+  createProduct(token: string, payload: ProductPayload) {
+    return request<Product>("/products", {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify(payload),
+    });
+  },
+
+  updateProduct(token: string, id: number, payload: Partial<ProductPayload>) {
+    return request<Product>(`/products/${id}`, {
+      method: "PATCH",
+      headers: authHeaders(token),
+      body: JSON.stringify(payload),
+    });
+  },
+
+  deleteProduct(token: string, id: number) {
+    return request<void>(`/products/${id}`, {
+      method: "DELETE",
+      headers: authHeaders(token),
+    });
+  },
+
+  addProductPrice(token: string, id: number, payload: ProductPricePayload) {
+    return request<ProductPrice>(`/products/${id}/prices`, {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify(payload),
+    });
   },
 
   quoteRequests(token: string) {
@@ -181,6 +402,107 @@ export const adminApi = {
       method: "PATCH",
       headers: authHeaders(token),
       body: JSON.stringify({ isRead }),
+    });
+  },
+
+  deleteContactMessage(token: string, id: number) {
+    return request<void>(`/contact-messages/${id}`, {
+      method: "DELETE",
+      headers: authHeaders(token),
+    });
+  },
+
+  orders(token: string, params: { keyword?: string; status?: AdminOrder["status"] } = {}) {
+    return request<AdminOrder[]>(`/orders${buildQuery(params)}`, {
+      headers: authHeaders(token),
+    });
+  },
+
+  updateOrderStatus(token: string, id: number, payload: { status: AdminOrder["status"]; cancelReason?: string; refundAmount?: number }) {
+    return request<AdminOrder>(`/orders/${id}/status`, {
+      method: "PATCH",
+      headers: authHeaders(token),
+      body: JSON.stringify(payload),
+    });
+  },
+
+  updatePaymentStatus(token: string, id: number, payload: { status: AdminOrder["payments"][number]["status"]; transactionCode?: string }) {
+    return request<AdminOrder["payments"][number]>(`/orders/payments/${id}/status`, {
+      method: "PATCH",
+      headers: authHeaders(token),
+      body: JSON.stringify(payload),
+    });
+  },
+
+  upsertShipment(token: string, id: number, payload: { carrier?: string; trackingCode?: string; status?: NonNullable<AdminOrder["shipment"]>["status"]; note?: string }) {
+    return request<NonNullable<AdminOrder["shipment"]>>(`/orders/${id}/shipment`, {
+      method: "PATCH",
+      headers: authHeaders(token),
+      body: JSON.stringify(payload),
+    });
+  },
+
+  inventories(token: string, params: { keyword?: string; lowStock?: boolean } = {}) {
+    return request<AdminInventory[]>(`/inventories${buildQuery(params)}`, {
+      headers: authHeaders(token),
+    });
+  },
+
+  updateInventory(token: string, id: number, payload: Partial<Pick<AdminInventory, "quantity" | "minQuantity" | "warehouse">>) {
+    return request<AdminInventory>(`/inventories/${id}`, {
+      method: "PATCH",
+      headers: authHeaders(token),
+      body: JSON.stringify(payload),
+    });
+  },
+
+  createStockMovement(token: string, payload: { productId: number; type: "IMPORT" | "EXPORT" | "ADJUSTMENT" | "RETURN"; quantity: number; reason?: string; reference?: string; warehouse?: string }) {
+    return request<{ inventory: AdminInventory }>("/inventories/movements", {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify(payload),
+    });
+  },
+
+  retailCustomers(token: string, params: { keyword?: string } = {}) {
+    return request<RetailCustomer[]>(`/customers/retail${buildQuery(params)}`, {
+      headers: authHeaders(token),
+    });
+  },
+
+  updateRetailCustomer(token: string, id: number, payload: Partial<Pick<RetailCustomer, "fullName" | "phone" | "isActive">>) {
+    return request<RetailCustomer>(`/customers/retail/${id}`, {
+      method: "PATCH",
+      headers: authHeaders(token),
+      body: JSON.stringify(payload),
+    });
+  },
+
+  businessCustomers(token: string, params: { keyword?: string } = {}) {
+    return request<BusinessCustomer[]>(`/customers/business${buildQuery(params)}`, {
+      headers: authHeaders(token),
+    });
+  },
+
+  createBusinessCustomer(token: string, payload: Pick<BusinessCustomer, "companyName" | "contactName" | "phone"> & Partial<Pick<BusinessCustomer, "taxCode" | "email" | "address" | "note">>) {
+    return request<BusinessCustomer>("/customers/business", {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify(payload),
+    });
+  },
+
+  updateBusinessCustomer(token: string, id: number, payload: Partial<Pick<BusinessCustomer, "companyName" | "taxCode" | "contactName" | "phone" | "email" | "address" | "note">>) {
+    return request<BusinessCustomer>(`/customers/business/${id}`, {
+      method: "PATCH",
+      headers: authHeaders(token),
+      body: JSON.stringify(payload),
+    });
+  },
+
+  reportOverview(token: string) {
+    return request<ReportOverview>("/reports/overview", {
+      headers: authHeaders(token),
     });
   },
 };

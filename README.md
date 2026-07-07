@@ -78,7 +78,6 @@ Password: postgres
 ```bash
 cd backend
 npm install
-cp .env.example .env
 npm run db:generate
 npm run db:push
 npm run db:seed
@@ -90,11 +89,21 @@ Nếu dùng PowerShell trên Windows:
 ```powershell
 cd backend
 npm install
-Copy-Item .env.example .env
 npm run db:generate
 npm run db:push
 npm run db:seed
 npm run dev
+```
+
+Tạo file `backend/.env` trước khi chạy database:
+
+```env
+PORT=4000
+NODE_ENV=development
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/coffee_b2b?schema=public"
+JWT_SECRET="change-this-local-secret"
+JWT_EXPIRES_IN="7d"
+CLIENT_ORIGINS="http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173"
 ```
 
 Backend API:
@@ -179,6 +188,24 @@ PATCH  /api/contact-messages/:id/read-status
 GET    /api/quote-requests
 GET    /api/quote-requests/:id
 PATCH  /api/quote-requests/:id/status
+
+GET    /api/orders
+GET    /api/orders/:id
+PATCH  /api/orders/:id/status
+PATCH  /api/orders/:id/shipment
+PATCH  /api/orders/payments/:id/status
+
+GET    /api/inventories
+PATCH  /api/inventories/:id
+POST   /api/inventories/movements
+
+GET    /api/customers/retail
+PATCH  /api/customers/retail/:id
+GET    /api/customers/business
+POST   /api/customers/business
+PATCH  /api/customers/business/:id
+
+GET    /api/reports/overview
 ```
 
 Admin:

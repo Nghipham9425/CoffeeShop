@@ -65,7 +65,6 @@ Password:   admin123
 
 ```bash
 npm install
-cp .env.example .env
 npm run db:generate
 npm run db:push
 npm run db:seed
@@ -76,11 +75,21 @@ PowerShell:
 
 ```powershell
 npm install
-Copy-Item .env.example .env
 npm run db:generate
 npm run db:push
 npm run db:seed
 npm run dev
+```
+
+Tạo file `.env` trong thư mục `backend` trước khi chạy:
+
+```env
+PORT=4000
+NODE_ENV=development
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/coffee_b2b?schema=public"
+JWT_SECRET="change-this-local-secret"
+JWT_EXPIRES_IN="7d"
+CLIENT_ORIGINS="http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173"
 ```
 
 API mặc định:
@@ -150,6 +159,24 @@ POST /api/quote-requests
 GET  /api/quote-requests          ADMIN/SALES
 GET  /api/quote-requests/:id      ADMIN/SALES
 PATCH /api/quote-requests/:id/status ADMIN/SALES
+
+GET  /api/orders                     ADMIN/SALES/ACCOUNTANT
+GET  /api/orders/:id                 ADMIN/SALES/ACCOUNTANT
+PATCH /api/orders/:id/status         ADMIN/SALES/ACCOUNTANT
+PATCH /api/orders/:id/shipment       ADMIN/SALES/ACCOUNTANT
+PATCH /api/orders/payments/:id/status ADMIN/SALES/ACCOUNTANT
+
+GET  /api/inventories                ADMIN/WAREHOUSE/SALES
+PATCH /api/inventories/:id           ADMIN/WAREHOUSE/SALES
+POST /api/inventories/movements      ADMIN/WAREHOUSE/SALES
+
+GET  /api/customers/retail           ADMIN/SALES
+PATCH /api/customers/retail/:id      ADMIN/SALES
+GET  /api/customers/business         ADMIN/SALES
+POST /api/customers/business         ADMIN/SALES
+PATCH /api/customers/business/:id    ADMIN/SALES
+
+GET  /api/reports/overview           ADMIN/SALES/ACCOUNTANT
 GET  /api/health
 ```
 

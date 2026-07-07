@@ -2,15 +2,23 @@ import { Router } from "express";
 import { authRoutes } from "./Auth/Auth.routes.js";
 import { categoryRoutes } from "./Category/Category.routes.js";
 import { contactMessageRoutes } from "./ContactMessage/ContactMessage.routes.js";
+import { customerRoutes } from "./Customer/Customer.routes.js";
 import { healthRoutes } from "./Health/Health.routes.js";
+import { inventoryRoutes } from "./Inventory/Inventory.routes.js";
+import { orderRoutes } from "./Order/Order.routes.js";
 import { productRoutes } from "./Product/Product.routes.js";
 import { quoteRequestRoutes } from "./QuoteRequest/QuoteRequest.routes.js";
+import { reportRoutes } from "./Report/Report.routes.js";
 
 export const apiRoutes = Router();
 
 apiRoutes.use("/auth", authRoutes);
 apiRoutes.use("/categories", categoryRoutes);
 apiRoutes.use("/contact-messages", contactMessageRoutes);
+apiRoutes.use("/customers", customerRoutes);
 apiRoutes.use("/health", healthRoutes);
+apiRoutes.use("/inventories", inventoryRoutes);
+apiRoutes.use("/orders", orderRoutes);
 apiRoutes.use("/products", productRoutes);
 apiRoutes.use("/quote-requests", quoteRequestRoutes);
+apiRoutes.use("/reports", reportRoutes);
