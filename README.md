@@ -13,6 +13,70 @@
 - Docker Desktop
 - Git
 
+## Cài project cho nhóm
+
+Clone project:
+
+```bash
+git clone https://github.com/Nghipham9425/CoffeeShop.git
+cd CoffeeShop
+```
+
+Tạo file `backend/.env` trước khi chạy backend. File này không commit lên GitHub.
+
+```env
+PORT=4000
+NODE_ENV=development
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/coffee_b2b?schema=public"
+JWT_SECRET="change-this-local-secret"
+JWT_EXPIRES_IN="7d"
+CLIENT_ORIGINS="http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173"
+```
+
+Chạy database PostgreSQL và pgAdmin:
+
+```bash
+docker compose up -d
+```
+
+Chạy backend:
+
+```bash
+cd backend
+npm install
+npm run db:generate
+npm run db:push
+npm run db:seed
+npm run dev
+```
+
+Mở terminal khác để chạy frontend:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+URL sau khi chạy:
+
+```text
+Frontend: http://localhost:5173
+Admin:    http://localhost:5173/admin
+Backend:  http://localhost:4000/api
+Swagger:  http://localhost:4000/api-docs
+pgAdmin:  http://localhost:5050
+```
+
+Tài khoản admin seed:
+
+```text
+Email: admin@phutaicoffee.vn
+Password: Admin@123
+```
+
+Nếu frontend chạy ở port khác, thêm origin đó vào `CLIENT_ORIGINS` trong `backend/.env`.
+
 ## Cấu trúc thư mục
 
 ```text
