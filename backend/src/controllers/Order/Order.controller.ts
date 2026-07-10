@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { orderService } from "../../services/Order/Order.service.js";
 import {
+  checkoutSchema,
   orderQuerySchema,
   updateOrderStatusSchema,
   updatePaymentStatusSchema,
@@ -8,6 +9,22 @@ import {
 } from "../../validators/Order/Order.validator.js";
 
 export const orderController = {
+  async checkout(req: Request, res: Response) {
+    const payload = checkoutSchema.parse(req.body);
+
+    try {
+      const order = await orderService.checkout(payload);
+      res.status(201).json(order);
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(400).json({ message: error.message });
+        return;
+      }
+
+      throw error;
+    }
+  },
+
   async getOrders(req: Request, res: Response) {
     const query = orderQuerySchema.parse(req.query);
     res.json(await orderService.getOrders(query));

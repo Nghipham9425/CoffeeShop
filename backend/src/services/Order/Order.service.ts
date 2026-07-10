@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { orderData } from "../../data/Order/Order.data.js";
 import type {
+  CheckoutInput,
   OrderQueryInput,
   UpdateOrderStatusInput,
   UpdatePaymentStatusInput,
@@ -82,6 +83,30 @@ function mapOrder(order: OrderRecord) {
 }
 
 export const orderService = {
+  async checkout(input: CheckoutInput) {
+    const orderCode = `PT${Date.now().toString().slice(-8)}${Math.floor(Math.random() * 90 + 10)}`;
+
+    try {
+      return mapOrder(await orderData.checkout({ ...input, orderCode }));
+    } catch (error) {
+      if (error instanceof Error && error.message.startsWith("INSUFFICIENT_STOCK:")) {
+        const productName = error.message.replace("INSUFFICIENT_STOCK:", "");
+        throw new Error(`Sản phẩm "${productName}" không đủ tồn kho`);
+      }
+
+      if (error instanceof Error && error.message.startsWith("PRODUCT_PRICE_NOT_FOUND:")) {
+        const productName = error.message.replace("PRODUCT_PRICE_NOT_FOUND:", "");
+        throw new Error(`Sản phẩm "${productName}" chưa có giá bán lẻ`);
+      }
+
+      if (error instanceof Error && error.message === "PRODUCT_NOT_FOUND") {
+        throw new Error("Có sản phẩm không còn bán lẻ hoặc không tồn tại");
+      }
+
+      throw error;
+    }
+  },
+
   async getOrders(query: OrderQueryInput) {
     const orders = await orderData.findMany(query);
     return orders.map(mapOrder);

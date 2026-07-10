@@ -12,6 +12,7 @@ import { ProductsPage as AdminProductsPage } from "./pages/admin/products/Produc
 import { QuotesPage as AdminQuotesPage } from "./pages/admin/quotes/QuotesPage";
 import { ReportsPage as AdminReportsPage } from "./pages/admin/reports/ReportsPage";
 import { AboutPage } from "./pages/client/About/AboutPage";
+import { CartPage } from "./pages/client/Cart/CartPage";
 import { ContactPage } from "./pages/client/Contact/ContactPage";
 import { HomePage } from "./pages/client/Home/HomePage";
 import { ProductsPage } from "./pages/client/Products/ProductsPage";
@@ -24,6 +25,7 @@ export default function App() {
       <Route element={<PublicLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/san-pham" element={<ProductsPage />} />
+        <Route path="/gio-hang" element={<CartPage />} />
         <Route path="/dich-vu" element={<ServicesPage />} />
         <Route path="/bao-gia" element={<QuotePage />} />
         <Route path="/ve-nha-may" element={<AboutPage />} />

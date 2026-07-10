@@ -6,6 +6,8 @@ import { authMiddleware, authorizeRoles } from "../../middleware/authMiddleware.
 
 export const orderRoutes = Router();
 
+orderRoutes.post("/checkout", asyncHandler(orderController.checkout));
+
 orderRoutes.use(authMiddleware, authorizeRoles(UserRole.ADMIN, UserRole.SALES, UserRole.ACCOUNTANT));
 orderRoutes.get("/", asyncHandler(orderController.getOrders));
 orderRoutes.get("/:id", asyncHandler(orderController.getOrderById));

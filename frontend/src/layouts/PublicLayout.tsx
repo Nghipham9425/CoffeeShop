@@ -1,12 +1,14 @@
-import { Clock3, Leaf, MapPin, Menu, Phone } from "lucide-react";
+import { Clock3, Leaf, MapPin, Menu, Phone, ShoppingCart } from "lucide-react";
 import { FaFacebookF, FaInstagram, FaTiktok, FaYoutube } from "react-icons/fa";
 import { NavLink, Outlet } from "react-router-dom";
+import { useCart } from "../contexts/CartContext";
 
 const navItems = [
   ["Trang chủ", "/"],
   ["Giới thiệu", "/ve-nha-may"],
   ["Dịch vụ", "/dich-vu"],
   ["Sản phẩm", "/san-pham"],
+  ["Giỏ hàng", "/gio-hang"],
   ["Báo giá cà phê", "/bao-gia"],
   ["Liên hệ", "/lien-he"],
 ];
@@ -19,6 +21,8 @@ const socials = [
 ];
 
 export function PublicLayout() {
+  const { itemCount } = useCart();
+
   return (
     <div className="min-h-screen bg-white text-[var(--ink)]">
       <header className="bg-white">
@@ -47,7 +51,7 @@ export function PublicLayout() {
 
         <div className="mx-auto max-w-[1500px] border-t border-stone-200 px-6 lg:px-10">
           <div className="flex h-16 items-center justify-between">
-            <nav className="hidden h-full items-center gap-9 lg:flex">
+            <nav className="hidden h-full items-center gap-7 lg:flex">
               {navItems.map(([label, href]) => (
                 <NavLink
                   key={href}
@@ -64,6 +68,18 @@ export function PublicLayout() {
             </button>
 
             <div className="ml-auto flex items-center gap-4 text-stone-950">
+              <NavLink
+                to="/gio-hang"
+                className="relative grid h-10 w-10 place-items-center rounded-full border border-stone-200 hover:bg-stone-100"
+                aria-label="Giỏ hàng"
+              >
+                <ShoppingCart size={20} />
+                {itemCount ? (
+                  <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-[var(--coffee)] px-1 text-xs font-black text-white">
+                    {itemCount}
+                  </span>
+                ) : null}
+              </NavLink>
               {socials.map(([label, Icon]) => (
                 <a key={label as string} href="#" aria-label={label as string} className="social-icon">
                   <Icon size={18} />
@@ -81,8 +97,7 @@ export function PublicLayout() {
           <div>
             <p className="hm-heading text-3xl uppercase">Phú Tài Coffee Works</p>
             <p className="mt-4 max-w-md leading-7 text-white/70">
-              Nhà máy rang xay, gia công và đóng gói cà phê cho quán, đại lý,
-              doanh nghiệp F&B và thương hiệu riêng.
+              Nhà máy rang xay, gia công và đóng gói cà phê cho quán, đại lý, doanh nghiệp F&B và thương hiệu riêng.
             </p>
           </div>
           <div>
