@@ -226,6 +226,13 @@ export type ProductPricePayload = {
   isActive?: boolean;
 };
 
+export type RegisterPayload = {
+  fullName: string;
+  email: string;
+  password: string;
+  phone?: string;
+};
+
 type LoginResponse = {
   user: AdminUser;
   token: string;
@@ -308,6 +315,13 @@ export const adminApi = {
     return request<LoginResponse>("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
+    });
+  },
+
+  register(payload: RegisterPayload) {
+    return request<LoginResponse>("/auth/register", {
+      method: "POST",
+      body: JSON.stringify(payload),
     });
   },
 

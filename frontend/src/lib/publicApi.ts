@@ -63,6 +63,10 @@ export const publicApi = {
     return request<PublicProduct[]>("/products?isRetail=true");
   },
 
+  product(id: number) {
+    return request<PublicProduct>(`/products/${id}`);
+  },
+
   checkout(payload: CheckoutPayload) {
     return request<CheckoutOrder>("/orders/checkout", {
       method: "POST",

@@ -127,6 +127,9 @@ export function ProductsPage() {
                       {isInCart ? <Check size={18} /> : <ShoppingCart size={18} />}
                       {isInCart ? "Đã có trong giỏ" : "Thêm giỏ hàng"}
                     </Button>
+                    <Button asChild className="mt-3 w-full" variant="outline">
+                      <Link to={`/san-pham/${product.id}`}>Xem chi tiết</Link>
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

@@ -1,4 +1,4 @@
-import { Clock3, Leaf, MapPin, Menu, Phone, ShoppingCart } from "lucide-react";
+import { Clock3, Leaf, LogIn, MapPin, Menu, Phone, ShoppingCart } from "lucide-react";
 import { FaFacebookF, FaInstagram, FaTiktok, FaYoutube } from "react-icons/fa";
 import { NavLink, Outlet } from "react-router-dom";
 import { useCart } from "../contexts/CartContext";
@@ -6,11 +6,8 @@ import { useCart } from "../contexts/CartContext";
 const navItems = [
   ["Trang chủ", "/"],
   ["Giới thiệu", "/ve-nha-may"],
-  ["Dịch vụ", "/dich-vu"],
   ["Sản phẩm", "/san-pham"],
-  ["Giỏ hàng", "/gio-hang"],
   ["Báo giá cà phê", "/bao-gia"],
-  ["Liên hệ", "/lien-he"],
 ];
 
 const socials = [
@@ -51,7 +48,7 @@ export function PublicLayout() {
 
         <div className="mx-auto max-w-[1500px] border-t border-stone-200 px-6 lg:px-10">
           <div className="flex h-16 items-center justify-between">
-            <nav className="hidden h-full items-center gap-7 lg:flex">
+            <nav className="hidden h-full items-center gap-6 lg:flex">
               {navItems.map(([label, href]) => (
                 <NavLink
                   key={href}
@@ -67,7 +64,14 @@ export function PublicLayout() {
               <Menu size={22} />
             </button>
 
-            <div className="ml-auto flex items-center gap-4 text-stone-950">
+            <div className="ml-auto flex items-center gap-3 text-stone-950">
+              <NavLink
+                to="/dang-nhap"
+                className="hidden h-10 items-center gap-2 rounded-full border border-stone-200 px-4 text-sm font-black hover:bg-stone-100 md:flex"
+              >
+                <LogIn size={17} />
+                Đăng nhập
+              </NavLink>
               <NavLink
                 to="/gio-hang"
                 className="relative grid h-10 w-10 place-items-center rounded-full border border-stone-200 hover:bg-stone-100"

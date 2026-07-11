@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { FeatureGrid } from "../../../components/home/FeatureGrid";
 import { ImageCardGrid } from "../../../components/home/ImageCardGrid";
+import { Reveal } from "../../../components/home/Reveal";
 import { SectionHeading } from "../../../components/home/SectionHeading";
 import { StatsGrid } from "../../../components/home/StatsGrid";
 import { categories, cleanFeatures, posts, stats, strengths, team } from "./homeData";
@@ -33,17 +34,17 @@ export function HomePage() {
       </section>
 
       <section className="hm-section grid items-center gap-12 lg:grid-cols-[0.9fr_1.4fr]">
-        <div className="hm-cup-visual" />
-        <div>
+        <Reveal><div className="hm-cup-visual" /></Reveal>
+        <Reveal delay={100}>
           <SectionHeading title="Thế mạnh của chúng tôi" align="left" />
           <div className="mt-16">
             <FeatureGrid items={strengths} />
           </div>
-        </div>
+        </Reveal>
       </section>
 
       <section className="hm-section grid items-center gap-16 bg-[#f2f2f2] lg:grid-cols-[1fr_1.05fr]">
-        <div>
+        <Reveal>
           <SectionHeading title="Chúng tôi làm gì?" align="left" />
           <p className="mt-10 max-w-3xl text-2xl leading-[1.9] text-stone-900">
             Nếu bạn đang tìm kiếm một xưởng rang gia công cà phê để tạo ra sản phẩm
@@ -51,26 +52,29 @@ export function HomePage() {
             nguyên liệu, xây dựng profile rang, phối trộn, đóng gói đến tư vấn quy cách
             cho bán sỉ và thương hiệu riêng.
           </p>
-        </div>
-        <div className="hm-bean-circle" />
+        </Reveal>
+        <Reveal delay={140}><div className="hm-bean-circle" /></Reveal>
       </section>
 
       <section className="bg-[#efefef] px-6 py-24">
-        <SectionHeading title="Những con số biết nói" />
-        <StatsGrid items={stats} />
+        <Reveal><SectionHeading title="Những con số biết nói" /></Reveal>
+        <Reveal delay={100}><StatsGrid items={stats} /></Reveal>
       </section>
 
       <section className="hm-section">
-        <SectionHeading title="Hạng mục gia công cà phê" />
-        <div className="mx-auto mt-16 h-px max-w-5xl bg-stone-200" />
-        <ImageCardGrid items={categories} columns="four" imageKind="service" />
+        <Reveal><SectionHeading title="Hạng mục gia công cà phê" /></Reveal>
+        <Reveal delay={100}>
+          <div className="mx-auto mt-16 h-px max-w-5xl bg-stone-200" />
+          <ImageCardGrid items={categories} columns="four" imageKind="service" />
+        </Reveal>
       </section>
 
       <section className="hm-section">
-        <SectionHeading title="Vì sao nên chọn chúng tôi?" />
-        <div className="mx-auto mt-12 h-px max-w-lg bg-stone-200" />
-        <div className="mx-auto mt-14 grid max-w-[1220px] items-center gap-16 lg:grid-cols-2">
-          <div className="text-xl leading-9 text-stone-800">
+        <Reveal><SectionHeading title="Vì sao nên chọn chúng tôi?" /></Reveal>
+        <Reveal delay={100}>
+          <div className="mx-auto mt-12 h-px max-w-lg bg-stone-200" />
+          <div className="mx-auto mt-14 grid max-w-[1220px] items-center gap-16 lg:grid-cols-2">
+            <div className="text-xl leading-9 text-stone-800">
             <p className="font-black text-stone-900">
               Phú Tài Coffee Works tập trung vào sản xuất cà phê B2B: cung ứng sỉ,
               rang gia công, OEM và private label cho khách hàng trong nước.
@@ -85,32 +89,39 @@ export function HomePage() {
               <li>Nhận gia công theo yêu cầu về hương vị, màu rang, bao bì.</li>
               <li>Tư vấn quy trình đặt hàng, mẫu thử, sản xuất và giao hàng.</li>
             </ul>
+            </div>
+            <div className="hm-why-photo" />
           </div>
-          <div className="hm-why-photo" />
-        </div>
+        </Reveal>
       </section>
 
       <section className="bg-[#efefef] px-6 py-24">
-        <SectionHeading title="Cà phê rang xay hạt sạch" />
-        <div className="mx-auto mt-16 max-w-[1240px]">
-          <FeatureGrid items={cleanFeatures} columns="three" iconTone="dark" />
-        </div>
+        <Reveal><SectionHeading title="Cà phê rang xay hạt sạch" /></Reveal>
+        <Reveal delay={100}>
+          <div className="mx-auto mt-16 max-w-[1240px]">
+            <FeatureGrid items={cleanFeatures} columns="three" iconTone="dark" />
+          </div>
+        </Reveal>
       </section>
 
       <section className="hm-section">
-        <SectionHeading
-          title="Đội ngũ nhân sự nhiệt huyết"
-          subtitle="Thành công của chúng tôi được làm nên từ sự tận tâm của mỗi cá nhân"
-        />
-        <ImageCardGrid items={team} columns="three" imageKind="team" />
+        <Reveal>
+          <SectionHeading
+            title="Đội ngũ nhân sự nhiệt huyết"
+            subtitle="Thành công của chúng tôi được làm nên từ sự tận tâm của mỗi cá nhân"
+          />
+        </Reveal>
+        <Reveal delay={100}><ImageCardGrid items={team} columns="three" imageKind="team" /></Reveal>
       </section>
 
       <section className="hm-section">
-        <SectionHeading
-          title="Tin tức mới nhất"
-          subtitle="Cập nhật nhanh thông tin mới về thị trường, giá cà phê và kinh nghiệm sản xuất"
-        />
-        <ImageCardGrid items={posts} columns="five" imageKind="post" />
+        <Reveal>
+          <SectionHeading
+            title="Tin tức mới nhất"
+            subtitle="Cập nhật nhanh thông tin mới về thị trường, giá cà phê và kinh nghiệm sản xuất"
+          />
+        </Reveal>
+        <Reveal delay={100}><ImageCardGrid items={posts} columns="five" imageKind="post" /></Reveal>
       </section>
     </main>
   );

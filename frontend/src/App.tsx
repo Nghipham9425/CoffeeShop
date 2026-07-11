@@ -12,12 +12,12 @@ import { ProductsPage as AdminProductsPage } from "./pages/admin/products/Produc
 import { QuotesPage as AdminQuotesPage } from "./pages/admin/quotes/QuotesPage";
 import { ReportsPage as AdminReportsPage } from "./pages/admin/reports/ReportsPage";
 import { AboutPage } from "./pages/client/About/AboutPage";
+import { AuthPage } from "./pages/client/Auth/AuthPage";
 import { CartPage } from "./pages/client/Cart/CartPage";
-import { ContactPage } from "./pages/client/Contact/ContactPage";
 import { HomePage } from "./pages/client/Home/HomePage";
+import { ProductDetailPage } from "./pages/client/Products/ProductDetailPage";
 import { ProductsPage } from "./pages/client/Products/ProductsPage";
 import { QuotePage } from "./pages/client/Quote/QuotePage";
-import { ServicesPage } from "./pages/client/Services/ServicesPage";
 
 export default function App() {
   return (
@@ -25,12 +25,15 @@ export default function App() {
       <Route element={<PublicLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/san-pham" element={<ProductsPage />} />
+        <Route path="/san-pham/:id" element={<ProductDetailPage />} />
         <Route path="/gio-hang" element={<CartPage />} />
-        <Route path="/dich-vu" element={<ServicesPage />} />
+        <Route path="/dich-vu" element={<Navigate to="/ve-nha-may" replace />} />
         <Route path="/bao-gia" element={<QuotePage />} />
         <Route path="/ve-nha-may" element={<AboutPage />} />
-        <Route path="/lien-he" element={<ContactPage />} />
+        <Route path="/lien-he" element={<Navigate to="/bao-gia" replace />} />
       </Route>
+      <Route path="/dang-nhap" element={<AuthPage mode="login" />} />
+      <Route path="/dang-ky" element={<AuthPage mode="register" />} />
       <Route path="/admin/dang-nhap" element={<AdminLoginPage />} />
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<AdminHomePage />} />

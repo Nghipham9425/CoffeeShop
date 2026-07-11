@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { KeyRound } from "lucide-react";
-import { Button } from "../ui/button";
 import { adminApi, type AdminUser } from "../../lib/adminApi";
+import { Button } from "../ui/button";
 
 export function AdminAuthCard({
   onLogin,
@@ -31,10 +31,7 @@ export function AdminAuthCard({
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="rounded-xl border border-[#E8D3C7] bg-white p-4 shadow-sm"
-    >
+    <form onSubmit={handleSubmit} className="rounded-xl border border-[#E8D3C7] bg-white p-4 shadow-sm">
       <div className="flex items-center gap-3">
         <span className="grid h-10 w-10 place-items-center rounded-lg bg-[#553B2F] text-white">
           <KeyRound size={18} />
