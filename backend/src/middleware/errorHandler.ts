@@ -10,7 +10,7 @@ export function errorHandler(
 ) {
   if (error instanceof ZodError) {
     res.status(400).json({
-      message: "Du lieu gui len khong hop le",
+      message: "Dữ liệu gửi lên không hợp lệ.",
       errors: error.issues,
     });
     return;
@@ -18,11 +18,11 @@ export function errorHandler(
 
   if (error instanceof Error) {
     res.status(500).json({
-      message: "May chu dang gap loi",
+      message: "Máy chủ đang gặp lỗi.",
       detail: isDevelopment ? error.message : undefined,
     });
     return;
   }
 
-  res.status(500).json({ message: "May chu dang gap loi" });
+  res.status(500).json({ message: "Máy chủ đang gặp lỗi." });
 }

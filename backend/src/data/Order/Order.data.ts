@@ -46,6 +46,22 @@ export const orderData = {
     });
   },
 
+  findPaymentStatus(id: number, orderCode: string) {
+    return prisma.order.findFirst({
+      where: { id, orderCode },
+      select: {
+        id: true,
+        orderCode: true,
+        status: true,
+        payments: {
+          select: { method: true, status: true, paidAt: true },
+          orderBy: { id: "asc" },
+          take: 1,
+        },
+      },
+    });
+  },
+
   updateStatus(id: number, input: UpdateOrderStatusInput) {
     return prisma.order.update({
       where: { id },
@@ -66,6 +82,13 @@ export const orderData = {
         transactionCode: input.transactionCode,
         paidAt: input.status === "PAID" ? new Date() : undefined,
       },
+    });
+  },
+
+  findPaymentById(id: number) {
+    return prisma.payment.findUnique({
+      where: { id },
+      include: { order: { select: { status: true } } },
     });
   },
 
@@ -175,10 +198,10 @@ export const orderData = {
           payments: {
             create: {
               method: input.paymentMethod,
-              status: input.paymentMethod === "COD" ? "PENDING" : "PAID",
+              status: "PENDING",
               amount: totalAmount,
-              transactionCode: input.paymentMethod === "COD" ? undefined : `MOCK-${input.orderCode}`,
-              paidAt: input.paymentMethod === "COD" ? undefined : new Date(),
+              transactionCode: undefined,
+              paidAt: undefined,
             },
           },
           shipment: {

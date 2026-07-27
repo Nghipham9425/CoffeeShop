@@ -21,7 +21,7 @@ export type CheckoutPayload = {
   customerEmail?: string;
   address: string;
   note?: string;
-  paymentMethod: "COD" | "BANK_TRANSFER" | "MOMO" | "VNPAY" | "ZALOPAY";
+  paymentMethod: "COD" | "BANK_TRANSFER" | "SEPAY" | "MOMO" | "VNPAY" | "ZALOPAY";
   shippingFee: number;
   items: Array<{
     productId: number;
@@ -38,6 +38,29 @@ export type CheckoutOrder = {
   totalAmount: number;
   status: string;
   createdAt: string;
+};
+
+export type SepayCheckoutSession = {
+  checkoutUrl: string;
+  fields: Record<string, string | number>;
+};
+
+export type PublicPaymentStatus = {
+  orderId: number;
+  orderCode: string;
+  orderStatus: string;
+  paymentStatus: "PENDING" | "PAID" | "FAILED" | "REFUNDED" | null;
+  paymentMethod: string | null;
+  paidAt: string | null;
+};
+
+export type QuoteRequestPayload = {
+  companyName: string;
+  contactName: string;
+  phoneOrEmail: string;
+  productNeed: string;
+  expectedQuantityKg?: number;
+  note?: string;
 };
 
 async function request<T>(path: string, options: RequestInit = {}) {
@@ -69,6 +92,24 @@ export const publicApi = {
 
   checkout(payload: CheckoutPayload) {
     return request<CheckoutOrder>("/orders/checkout", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  initializeSepay(orderId: number) {
+    return request<SepayCheckoutSession>("/payments/sepay/checkout", {
+      method: "POST",
+      body: JSON.stringify({ orderId }),
+    });
+  },
+
+  paymentStatus(orderId: number, orderCode: string) {
+    return request<PublicPaymentStatus>(`/orders/${orderId}/payment-status?orderCode=${encodeURIComponent(orderCode)}`);
+  },
+
+  createQuoteRequest(payload: QuoteRequestPayload) {
+    return request<{ id: number }>("/quote-requests", {
       method: "POST",
       body: JSON.stringify(payload),
     });

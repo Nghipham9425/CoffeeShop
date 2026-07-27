@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { OrderStatus, PaymentMethod, PaymentStatus, Prisma, ShipmentStatus } from "@prisma/client";
 import { orderData } from "../../data/Order/Order.data.js";
 import type {
   CheckoutInput,
@@ -117,15 +117,80 @@ export const orderService = {
     return order ? mapOrder(order) : null;
   },
 
+  async getPublicPaymentStatus(id: number, orderCode: string) {
+    const order = await orderData.findPaymentStatus(id, orderCode);
+    if (!order) return null;
+
+    const payment = order.payments[0] ?? null;
+    return {
+      orderId: order.id,
+      orderCode: order.orderCode,
+      orderStatus: order.status,
+      paymentStatus: payment?.status ?? null,
+      paymentMethod: payment?.method ?? null,
+      paidAt: payment?.paidAt ?? null,
+    };
+  },
+
   async updateOrderStatus(id: number, input: UpdateOrderStatusInput) {
     const order = await orderData.findById(id);
     if (!order) throw new Error("ORDER_NOT_FOUND");
 
+    const payment = order.payments[0];
+    const shipment = order.shipment;
+    const allowedTransitions: Partial<Record<OrderStatus, OrderStatus[]>> = {
+      [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
+      [OrderStatus.CONFIRMED]: [OrderStatus.PACKING, OrderStatus.CANCELLED],
+      [OrderStatus.PACKING]: [OrderStatus.SHIPPING],
+      [OrderStatus.SHIPPING]: [OrderStatus.COMPLETED],
+    };
+
+    if (!allowedTransitions[order.status]?.includes(input.status)) {
+      throw new Error("INVALID_ORDER_STATUS_TRANSITION");
+    }
+
+    if (
+      input.status === OrderStatus.CONFIRMED
+      && payment
+      && (payment.method === PaymentMethod.SEPAY || payment.method === PaymentMethod.BANK_TRANSFER)
+      && payment.status !== PaymentStatus.PAID
+    ) {
+      throw new Error("PAYMENT_MUST_BE_CONFIRMED");
+    }
+
+    if (input.status === OrderStatus.SHIPPING && shipment?.status !== ShipmentStatus.SHIPPED) {
+      throw new Error("SHIPMENT_MUST_BE_SHIPPED");
+    }
+
+    if (input.status === OrderStatus.COMPLETED && shipment?.status !== ShipmentStatus.DELIVERED) {
+      throw new Error("SHIPMENT_MUST_BE_DELIVERED");
+    }
+
     const updated = await orderData.updateStatus(id, input);
+
+    // COD is collected after successful delivery, not while the order is new.
+    if (input.status === OrderStatus.COMPLETED && payment?.method === PaymentMethod.COD && payment.status === PaymentStatus.PENDING) {
+      await orderData.updatePaymentStatus(payment.id, { status: PaymentStatus.PAID });
+    }
     return mapOrder(updated);
   },
 
   async updatePaymentStatus(id: number, input: UpdatePaymentStatusInput) {
+    const payment = await orderData.findPaymentById(id);
+    if (!payment) throw new Error("PAYMENT_NOT_FOUND");
+
+    if (payment.method === PaymentMethod.SEPAY) {
+      throw new Error("SEPAY_PAYMENT_MANAGED_BY_WEBHOOK");
+    }
+
+    if (payment.method === PaymentMethod.COD && input.status === PaymentStatus.PAID && payment.order.status !== OrderStatus.COMPLETED) {
+      throw new Error("COD_CAN_ONLY_BE_PAID_AFTER_DELIVERY");
+    }
+
+    if (payment.status === PaymentStatus.PAID && input.status === PaymentStatus.REFUNDED && payment.order.status !== OrderStatus.CANCELLED) {
+      throw new Error("REFUND_REQUIRES_CANCELLED_ORDER");
+    }
+
     return mapPayment(await orderData.updatePaymentStatus(id, input));
   },
 

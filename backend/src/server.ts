@@ -1,9 +1,11 @@
 import { env } from "./config/env.js";
 import { prisma } from "./data/prisma.js";
 import { app } from "./app.js";
+import { startSepayPaymentExpiryJob } from "./jobs/Payment/SepayPaymentExpiry.job.js";
 
 const server = app.listen(env.port, () => {
   console.log(`API dang chay tai http://localhost:${env.port}`);
+  startSepayPaymentExpiryJob();
 });
 
 async function shutdown(signal: string) {

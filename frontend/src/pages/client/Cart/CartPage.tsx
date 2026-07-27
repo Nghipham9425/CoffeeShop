@@ -1,19 +1,20 @@
-import { CalendarCheck, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from "lucide-react";
-import { useMemo, useState, type FormEvent } from "react";
+import { CalendarCheck, CheckCircle2, CreditCard, Landmark, MapPin, Minus, PackageCheck, Plus, ShoppingBag, Truck, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
 import { Card, CardContent } from "../../../components/ui/card";
 import { useCart } from "../../../contexts/CartContext";
-import { formatVnd, publicApi, type CheckoutOrder } from "../../../lib/publicApi";
+import { adminAuth } from "../../../lib/adminApi";
+import { profileApi, type ProfileAddress } from "../../../lib/profileApi";
+import { formatVnd, publicApi, type CheckoutOrder, type SepayCheckoutSession } from "../../../lib/publicApi";
 
 const SHIPPING_FEE = 25000;
 
 const paymentOptions = [
-  { value: "COD", label: "Thanh toán khi nhận hàng" },
-  { value: "BANK_TRANSFER", label: "Chuyển khoản ngân hàng" },
-  { value: "MOMO", label: "Ví MoMo" },
-  { value: "VNPAY", label: "VNPay" },
+  { value: "COD", label: "Thanh toán khi nhận hàng", description: "Thanh toán tiền mặt cho đơn vị giao hàng.", icon: Truck },
+  { value: "BANK_TRANSFER", label: "Chuyển khoản ngân hàng", description: "Nhận thông tin chuyển khoản sau khi đặt đơn.", icon: Landmark },
+  { value: "SEPAY", label: "Thanh toán qua SePay", description: "Thanh toán online qua cổng SePay an toàn.", icon: CreditCard },
 ] as const;
 
 type CheckoutForm = {
@@ -24,6 +25,8 @@ type CheckoutForm = {
   paymentMethod: (typeof paymentOptions)[number]["value"];
   note: string;
 };
+
+type AddressMode = "DEFAULT" | "MANUAL";
 
 const initialForm: CheckoutForm = {
   customerName: "",
@@ -40,8 +43,47 @@ export function CartPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [createdOrder, setCreatedOrder] = useState<CheckoutOrder | null>(null);
+  const [defaultAddress, setDefaultAddress] = useState<ProfileAddress | null>(null);
+  const [addressMode, setAddressMode] = useState<AddressMode>("MANUAL");
+  const [loadingAddress, setLoadingAddress] = useState(Boolean(adminAuth.getToken()));
 
   const total = useMemo(() => subtotal + (items.length ? SHIPPING_FEE : 0), [items.length, subtotal]);
+
+  useEffect(() => {
+    if (!adminAuth.getToken()) return;
+
+    void (async () => {
+      try {
+        const profile = await profileApi.me();
+        setForm((current) => ({
+          ...current,
+          customerName: current.customerName || profile.fullName,
+          customerPhone: current.customerPhone || profile.phone || "",
+          customerEmail: current.customerEmail || profile.email,
+        }));
+        const savedDefault = profile.addresses.find((address) => address.isDefault) ?? profile.addresses[0] ?? null;
+        setDefaultAddress(savedDefault);
+        if (savedDefault) {
+          setAddressMode("DEFAULT");
+          setForm((current) => ({ ...current, ...addressToForm(savedDefault) }));
+        }
+      } catch {
+        // Khách chưa đăng nhập vẫn có thể đặt hàng với thông tin nhập tay.
+      } finally {
+        setLoadingAddress(false);
+      }
+    })();
+  }, []);
+
+  function useDefaultAddress() {
+    if (!defaultAddress) return;
+    setAddressMode("DEFAULT");
+    setForm((current) => ({ ...current, ...addressToForm(defaultAddress) }));
+  }
+
+  function useManualAddress() {
+    setAddressMode("MANUAL");
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -62,6 +104,9 @@ export function CartPage() {
       clearCart();
       setForm(initialForm);
       setCreatedOrder(order);
+      if (form.paymentMethod === "SEPAY") {
+        submitSepayForm(await publicApi.initializeSepay(order.id));
+      }
     } catch (checkoutError) {
       setError(checkoutError instanceof Error ? checkoutError.message : "Không thể đặt hàng lúc này.");
     } finally {
@@ -177,6 +222,19 @@ export function CartPage() {
               {error ? <p className="mt-4 rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">{error}</p> : null}
 
               <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+                {defaultAddress ? <div className="rounded-xl border border-stone-200 bg-stone-50 p-3">
+                  <p className="text-sm font-black text-stone-950">Địa chỉ nhận hàng</p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    <button type="button" onClick={useDefaultAddress} className={`rounded-lg border p-3 text-left text-sm transition ${addressMode === "DEFAULT" ? "border-[var(--coffee)] bg-white text-[var(--coffee)]" : "border-stone-200 bg-white text-stone-600 hover:border-stone-400"}`}>
+                      <span className="flex items-center gap-2 font-black"><CheckCircle2 size={16} /> Dùng địa chỉ mặc định</span>
+                      <span className="mt-1 block text-xs leading-5">{formatAddress(defaultAddress)}</span>
+                    </button>
+                    <button type="button" onClick={useManualAddress} className={`rounded-lg border p-3 text-left text-sm transition ${addressMode === "MANUAL" ? "border-[var(--coffee)] bg-white text-[var(--coffee)]" : "border-stone-200 bg-white text-stone-600 hover:border-stone-400"}`}>
+                      <span className="flex items-center gap-2 font-black"><MapPin size={16} /> Nhập địa chỉ khác</span>
+                      <span className="mt-1 block text-xs leading-5">Sử dụng khi cần giao đến địa chỉ khác.</span>
+                    </button>
+                  </div>
+                </div> : loadingAddress ? <p className="text-sm text-stone-500">Đang tải địa chỉ mặc định...</p> : <button type="button" onClick={useManualAddress} className="w-full rounded-xl border border-dashed border-stone-300 p-3 text-left text-sm font-semibold text-stone-600 hover:border-stone-400"><MapPin className="mr-2 inline" size={16} /> Nhập địa chỉ nhận hàng</button>}
                 <input
                   className="h-12 w-full rounded-xl border border-stone-200 px-4 outline-none focus:border-emerald-800"
                   placeholder="Họ tên"
@@ -198,26 +256,14 @@ export function CartPage() {
                   value={form.customerEmail}
                   onChange={(event) => setForm((current) => ({ ...current, customerEmail: event.target.value }))}
                 />
-                <textarea
+                {addressMode === "MANUAL" ? <textarea
                   className="min-h-24 w-full rounded-xl border border-stone-200 p-4 outline-none focus:border-emerald-800"
-                  placeholder="Địa chỉ nhận hàng"
+                  placeholder="Địa chỉ nhận hàng: số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố"
                   value={form.address}
                   onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))}
                   required
-                />
-                <select
-                  className="h-12 w-full rounded-xl border border-stone-200 px-4 outline-none focus:border-emerald-800"
-                  value={form.paymentMethod}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, paymentMethod: event.target.value as CheckoutForm["paymentMethod"] }))
-                  }
-                >
-                  {paymentOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                /> : <div className="rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm text-stone-700"><strong>{defaultAddress?.receiverName}</strong> · {defaultAddress?.phone}<br /><span className="mt-1 block">{defaultAddress ? formatAddress(defaultAddress) : ""}</span></div>}
+                <div className="space-y-2"><p className="text-sm font-black text-stone-950">Phương thức thanh toán</p>{paymentOptions.map((option) => { const Icon = option.icon; const selected = form.paymentMethod === option.value; return <button key={option.value} type="button" onClick={() => setForm((current) => ({ ...current, paymentMethod: option.value }))} className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition ${selected ? "border-[var(--coffee)] bg-stone-50" : "border-stone-200 hover:border-stone-400"}`}><span className={`grid h-9 w-9 place-items-center rounded-lg ${selected ? "bg-[var(--coffee)] text-white" : "bg-stone-100 text-stone-600"}`}><Icon size={18} /></span><span><span className="block text-sm font-black text-stone-950">{option.label}</span><span className="block text-xs text-stone-500">{option.description}</span></span></button>; })}</div>
                 <textarea
                   className="min-h-20 w-full rounded-xl border border-stone-200 p-4 outline-none focus:border-emerald-800"
                   placeholder="Ghi chú cho đơn hàng"
@@ -250,4 +296,31 @@ export function CartPage() {
       </section>
     </main>
   );
+}
+
+function addressToForm(address: ProfileAddress) {
+  return {
+    customerName: address.receiverName,
+    customerPhone: address.phone,
+    address: formatAddress(address),
+  };
+}
+
+function formatAddress(address: ProfileAddress) {
+  return [address.detail, address.ward, address.district, address.province].filter(Boolean).join(", ");
+}
+
+function submitSepayForm(session: SepayCheckoutSession) {
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = session.checkoutUrl;
+  Object.entries(session.fields).forEach(([name, value]) => {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = name;
+    input.value = String(value);
+    form.appendChild(input);
+  });
+  document.body.appendChild(form);
+  form.submit();
 }

@@ -315,12 +315,12 @@ function OrderDetailDialog({
           <p className="flex items-center gap-1 text-xs font-black text-[#553B2F]"><CreditCard size={14} /> {payment.method}</p>
           <div className="mt-2 flex flex-wrap gap-2">
             <AdminStatusBadge status={payment.status} />
-            {payment.status === "PENDING" ? (
+            {payment.status === "PENDING" && payment.method === "BANK_TRANSFER" ? (
               <Button disabled={isUpdating} onClick={() => onUpdatePayment(order, payment.id, "PAID")} className="h-7 rounded-md bg-emerald-700 px-2 text-[11px] text-white hover:bg-emerald-800">
                 <CheckCircle2 size={13} /> Đã thu
               </Button>
             ) : null}
-            {payment.status === "PAID" ? (
+            {payment.status === "PAID" && payment.method === "BANK_TRANSFER" && order.status === "CANCELLED" ? (
               <Button variant="outline" disabled={isUpdating} onClick={() => onUpdatePayment(order, payment.id, "REFUNDED")} className="h-7 rounded-md border-amber-300 px-2 text-[11px] text-amber-800 hover:bg-amber-50">
                 Hoàn tiền
               </Button>

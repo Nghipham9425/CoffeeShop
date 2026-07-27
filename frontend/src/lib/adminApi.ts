@@ -103,7 +103,7 @@ export type AdminOrder = {
   }>;
   payments: Array<{
     id: number;
-    method: "COD" | "BANK_TRANSFER" | "MOMO" | "VNPAY" | "ZALOPAY";
+    method: "COD" | "BANK_TRANSFER" | "SEPAY" | "MOMO" | "VNPAY" | "ZALOPAY";
     status: "PENDING" | "PAID" | "FAILED" | "REFUNDED";
     amount: number;
     transactionCode: string | null;

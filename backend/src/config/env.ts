@@ -16,6 +16,11 @@ export const env = {
     "postgresql://postgres:postgres@localhost:5432/coffee_b2b?schema=public",
   jwtSecret: process.env.JWT_SECRET ?? "dev_secret_change_me",
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? "7d",
+  sepayEnvironment: (process.env.SEPAY_ENV?.trim().toLowerCase() === "production" ? "production" : "sandbox") as "sandbox" | "production",
+  sepayMerchantId: process.env.SEPAY_MERCHANT_ID?.trim(),
+  sepaySecretKey: process.env.SEPAY_SECRET_KEY?.trim(),
+  clientAppUrl: process.env.CLIENT_APP_URL?.trim() ?? (clientOrigins[0] ?? "http://localhost:3000"),
+  sepayPaymentExpiryMinutes: Number(process.env.SEPAY_PAYMENT_EXPIRY_MINUTES ?? 30),
 };
 
 export const isDevelopment = env.nodeEnv === "development";

@@ -1,7 +1,8 @@
-import { Clock3, Leaf, LogIn, MapPin, Menu, Phone, ShoppingCart } from "lucide-react";
+import { Clock3, KeyRound, Leaf, LogIn, LogOut, MapPin, Menu, Phone, ShoppingCart, UserRound } from "lucide-react";
 import { FaFacebookF, FaInstagram, FaTiktok, FaYoutube } from "react-icons/fa";
 import { NavLink, Outlet } from "react-router-dom";
 import { useCart } from "../contexts/CartContext";
+import { adminAuth } from "../lib/adminApi";
 
 const navItems = [
   ["Trang chủ", "/"],
@@ -19,6 +20,7 @@ const socials = [
 
 export function PublicLayout() {
   const { itemCount } = useCart();
+  const user = adminAuth.getUser();
 
   return (
     <div className="min-h-screen bg-white text-[var(--ink)]">
@@ -65,13 +67,39 @@ export function PublicLayout() {
             </button>
 
             <div className="ml-auto flex items-center gap-3 text-stone-950">
-              <NavLink
-                to="/dang-nhap"
-                className="hidden h-10 items-center gap-2 rounded-full border border-stone-200 px-4 text-sm font-black hover:bg-stone-100 md:flex"
-              >
-                <LogIn size={17} />
-                Đăng nhập
-              </NavLink>
+              {user ? (
+                <div className="group relative hidden md:block">
+                  <NavLink
+                    to="/tai-khoan/thong-tin"
+                    className="flex h-10 items-center gap-2 rounded-full border border-stone-200 px-4 text-sm font-black transition-colors hover:bg-stone-100"
+                  >
+                    <UserRound size={17} /> Tài khoản
+                  </NavLink>
+                  <div className="invisible absolute right-0 top-full z-30 mt-2 w-60 translate-y-1 rounded-xl border border-stone-200 bg-white p-2 opacity-0 shadow-xl transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                    <NavLink to="/tai-khoan/thong-tin" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold text-stone-700 transition-colors hover:bg-stone-100 hover:text-[var(--coffee)]">
+                      <UserRound size={17} /> Thông tin khách hàng
+                    </NavLink>
+                    <NavLink to="/tai-khoan/dia-chi" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold text-stone-700 transition-colors hover:bg-stone-100 hover:text-[var(--coffee)]">
+                      <MapPin size={17} /> Sổ địa chỉ
+                    </NavLink>
+                    <NavLink to="/tai-khoan/doi-mat-khau" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold text-stone-700 transition-colors hover:bg-stone-100 hover:text-[var(--coffee)]">
+                      <KeyRound size={17} /> Đổi mật khẩu
+                    </NavLink>
+                    <div className="my-1 border-t border-stone-100" />
+                    <button
+                      type="button"
+                      onClick={() => { adminAuth.clearSession(); window.location.assign("/"); }}
+                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-bold text-red-700 transition-colors hover:bg-red-50"
+                    >
+                      <LogOut size={17} /> Đăng xuất
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <NavLink to="/dang-nhap" className="hidden h-10 items-center gap-2 rounded-full border border-stone-200 px-4 text-sm font-black hover:bg-stone-100 md:flex">
+                  <LogIn size={17} /> Đăng nhập
+                </NavLink>
+              )}
               <NavLink
                 to="/gio-hang"
                 className="relative grid h-10 w-10 place-items-center rounded-full border border-stone-200 hover:bg-stone-100"
