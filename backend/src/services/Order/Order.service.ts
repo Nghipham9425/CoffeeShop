@@ -83,11 +83,11 @@ function mapOrder(order: OrderRecord) {
 }
 
 export const orderService = {
-  async checkout(input: CheckoutInput) {
+  async checkout(input: CheckoutInput, userId?: number) {
     const orderCode = `PT${Date.now().toString().slice(-8)}${Math.floor(Math.random() * 90 + 10)}`;
 
     try {
-      return mapOrder(await orderData.checkout({ ...input, orderCode }));
+      return mapOrder(await orderData.checkout({ ...input, orderCode, userId }));
     } catch (error) {
       if (error instanceof Error && error.message.startsWith("INSUFFICIENT_STOCK:")) {
         const productName = error.message.replace("INSUFFICIENT_STOCK:", "");
@@ -129,6 +129,29 @@ export const orderService = {
       paymentStatus: payment?.status ?? null,
       paymentMethod: payment?.method ?? null,
       paidAt: payment?.paidAt ?? null,
+    };
+  },
+
+  async trackOrder(trackingCode: string) {
+    const shipment = await orderData.findTrackingOrder(trackingCode.trim().toUpperCase());
+    if (!shipment) return null;
+    const order = shipment.order;
+
+    return {
+      id: order.id,
+      orderCode: order.orderCode,
+      status: order.status,
+      totalAmount: Number(order.totalAmount),
+      createdAt: order.createdAt,
+      items: order.items.map((item) => ({ id: item.id, productName: item.product.name, unit: item.product.unit, quantity: item.quantity })),
+      payment: order.payments[0] ?? null,
+      shipment: {
+        status: shipment.status,
+        carrier: shipment.carrier,
+        trackingCode: shipment.trackingCode,
+        shippedAt: shipment.shippedAt,
+        deliveredAt: shipment.deliveredAt,
+      },
     };
   },
 

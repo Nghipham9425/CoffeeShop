@@ -5,6 +5,7 @@ import { adminAuth } from "../../../lib/adminApi";
 
 const navigation: Array<[string, string, LucideIcon]> = [
   ["Thông tin cá nhân", "/tai-khoan/thong-tin", UserRound],
+  ["Lịch sử đơn hàng", "/tai-khoan/don-hang", Package],
   ["Sổ địa chỉ", "/tai-khoan/dia-chi", MapPin],
   ["Đổi mật khẩu", "/tai-khoan/doi-mat-khau", KeyRound],
 ];
@@ -19,7 +20,7 @@ export function AccountPageShell({ title, description, children }: { title: stri
       <Link to="/gio-hang" className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-stone-200 bg-white px-4 text-sm font-bold text-stone-950 hover:bg-stone-100"><Package size={17} /> Giỏ hàng</Link>
     </div>
     <div className="mt-8 grid gap-8 lg:grid-cols-[260px_1fr]">
-      <aside className="h-fit rounded-2xl border border-stone-200 bg-white p-3 shadow-sm"><div className="border-b border-stone-100 px-3 py-4"><p className="font-black text-stone-950">{user.fullName}</p><p className="mt-1 truncate text-sm text-stone-500">{user.email}</p></div><nav className="mt-2 grid gap-1">{navigation.map(([label, href, Icon]) => <NavLink key={href as string} to={href as string} className={({ isActive }) => `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold transition ${isActive ? "bg-[#342018] text-white" : "text-stone-700 hover:bg-stone-100"}`}><Icon size={18} />{label}</NavLink>)}</nav></aside>
+      <aside className="h-fit rounded-2xl border border-stone-200 bg-white p-3 shadow-sm"><div className="border-b border-stone-100 px-3 py-4"><p className="font-black text-stone-950">{user.fullName}</p><p className="mt-1 truncate text-sm text-stone-500">{user.email}</p></div><nav className="mt-2 grid gap-1">{navigation.map(([label, href, Icon]) => <NavLink key={href} to={href} style={({ isActive }) => isActive ? { color: "#ffffff" } : undefined} className={({ isActive }) => isActive ? "flex items-center gap-3 rounded-xl bg-[#342018] px-3 py-3 text-sm font-bold transition hover:bg-[#21130f]" : "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-stone-700 transition hover:bg-stone-100"}><Icon size={18} />{label}</NavLink>)}</nav></aside>
       <div>{children}</div>
     </div>
   </section></main>;

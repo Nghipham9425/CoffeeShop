@@ -14,3 +14,4 @@ authRoutes.get("/me/addresses", authMiddleware, asyncHandler(authController.addr
 authRoutes.post("/me/addresses", authMiddleware, asyncHandler(authController.createAddress));
 authRoutes.patch("/me/addresses/:addressId", authMiddleware, asyncHandler(authController.updateAddress));
 authRoutes.delete("/me/addresses/:addressId", authMiddleware, asyncHandler(authController.deleteAddress));
+authRoutes.get("/me/orders", authMiddleware, asyncHandler(authController.orderHistory));

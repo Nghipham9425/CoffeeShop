@@ -97,4 +97,26 @@ export const authService = {
   deleteAddress(userId: number, addressId: number) {
     return userData.deleteAddress(userId, addressId);
   },
+
+  async orderHistory(userId: number) {
+    await userData.claimGuestOrders(userId);
+    const orders = await userData.listOrderHistory(userId);
+    return orders.map((order) => ({
+      id: order.id,
+      orderCode: order.orderCode,
+      status: order.status,
+      totalAmount: Number(order.totalAmount),
+      createdAt: order.createdAt,
+      items: order.items.map((item) => ({
+        id: item.id,
+        productName: item.product.name,
+        unit: item.product.unit,
+        quantity: item.quantity,
+      })),
+      payment: order.payments[0]
+        ? { method: order.payments[0].method, status: order.payments[0].status, paidAt: order.payments[0].paidAt }
+        : null,
+      shipment: order.shipment,
+    }));
+  },
 };

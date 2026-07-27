@@ -62,6 +62,30 @@ export const orderData = {
     });
   },
 
+  findTrackingOrder(trackingCode: string) {
+    return prisma.shipment.findFirst({
+      where: { trackingCode },
+      select: {
+        status: true,
+        carrier: true,
+        trackingCode: true,
+        shippedAt: true,
+        deliveredAt: true,
+        order: {
+          select: {
+            id: true,
+            orderCode: true,
+            status: true,
+            totalAmount: true,
+            createdAt: true,
+            items: { select: { id: true, quantity: true, product: { select: { name: true, unit: true } } } },
+            payments: { select: { method: true, status: true, paidAt: true }, orderBy: { id: "asc" }, take: 1 },
+          },
+        },
+      },
+    });
+  },
+
   updateStatus(id: number, input: UpdateOrderStatusInput) {
     return prisma.order.update({
       where: { id },
@@ -115,7 +139,7 @@ export const orderData = {
     });
   },
 
-  async checkout(input: CheckoutInput & { orderCode: string }) {
+  async checkout(input: CheckoutInput & { orderCode: string; userId?: number }) {
     return prisma.$transaction(async (tx) => {
       const productIds = input.items.map((item) => item.productId);
       const products = await tx.product.findMany({
@@ -178,6 +202,7 @@ export const orderData = {
       const order = await tx.order.create({
         data: {
           orderCode: input.orderCode,
+          userId: input.userId,
           customerName: input.customerName,
           customerPhone: input.customerPhone,
           customerEmail: input.customerEmail || undefined,

@@ -45,6 +45,17 @@ export type SepayCheckoutSession = {
   fields: Record<string, string | number>;
 };
 
+export type TrackedOrder = {
+  id: number;
+  orderCode: string;
+  status: string;
+  totalAmount: number;
+  createdAt: string;
+  items: Array<{ id: number; productName: string; unit: string; quantity: number }>;
+  payment: { method: string; status: string; paidAt: string | null } | null;
+  shipment: { status: string; carrier: string | null; trackingCode: string | null; shippedAt: string | null; deliveredAt: string | null } | null;
+};
+
 export type PublicPaymentStatus = {
   orderId: number;
   orderCode: string;
@@ -90,9 +101,10 @@ export const publicApi = {
     return request<PublicProduct>(`/products/${id}`);
   },
 
-  checkout(payload: CheckoutPayload) {
+  checkout(payload: CheckoutPayload, token?: string | null) {
     return request<CheckoutOrder>("/orders/checkout", {
       method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       body: JSON.stringify(payload),
     });
   },
@@ -106,6 +118,10 @@ export const publicApi = {
 
   paymentStatus(orderId: number, orderCode: string) {
     return request<PublicPaymentStatus>(`/orders/${orderId}/payment-status?orderCode=${encodeURIComponent(orderCode)}`);
+  },
+
+  trackOrder(trackingCode: string) {
+    return request<TrackedOrder>(`/orders/track?trackingCode=${encodeURIComponent(trackingCode)}`);
   },
 
   createQuoteRequest(payload: QuoteRequestPayload) {

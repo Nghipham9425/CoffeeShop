@@ -13,7 +13,7 @@ export const orderController = {
     const payload = checkoutSchema.parse(req.body);
 
     try {
-      const order = await orderService.checkout(payload);
+      const order = await orderService.checkout(payload, req.user?.userId);
       res.status(201).json(order);
     } catch (error) {
       if (error instanceof Error) {
@@ -39,6 +39,20 @@ export const orderController = {
     }
 
     res.json(result);
+  },
+
+  async trackOrder(req: Request, res: Response) {
+    const trackingCode = String(req.query.trackingCode ?? "").trim();
+    if (!trackingCode) {
+      res.status(400).json({ message: "Vui lòng nhập mã vận đơn." });
+      return;
+    }
+    const order = await orderService.trackOrder(trackingCode);
+    if (!order) {
+      res.status(404).json({ message: "Không tìm thấy vận đơn phù hợp." });
+      return;
+    }
+    res.json(order);
   },
 
   async getOrderById(req: Request, res: Response) {

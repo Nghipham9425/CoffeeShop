@@ -99,7 +99,7 @@ export function CartPage() {
           productId: item.productId,
           quantity: item.quantity,
         })),
-      });
+      }, adminAuth.getToken());
 
       clearCart();
       setForm(initialForm);

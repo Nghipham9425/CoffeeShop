@@ -78,6 +78,14 @@ a {
   text-rendering: optimizeLegibility;
 }
 
+/* Use a Vietnamese-capable serif font consistently for page headings. */
+.font-serif {
+  font-family: "Noto Serif", Georgia, "Times New Roman", serif;
+  letter-spacing: 0;
+  font-kerning: normal;
+  font-variant-ligatures: normal;
+}
+
 .hm-section {
   padding: 7rem 1.5rem;
 }

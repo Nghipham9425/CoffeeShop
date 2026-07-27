@@ -37,3 +37,18 @@ export function authorizeRoles(...roles: UserRole[]) {
     next();
   };
 }
+
+export function optionalAuthMiddleware(req: Request, res: Response, next: NextFunction) {
+  const header = req.headers.authorization;
+  if (!header?.startsWith("Bearer ")) {
+    next();
+    return;
+  }
+
+  try {
+    req.user = jwt.verify(header.replace("Bearer ", ""), env.jwtSecret) as JwtUserPayload;
+    next();
+  } catch {
+    res.status(401).json({ message: "Token invalid or expired" });
+  }
+}

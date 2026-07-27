@@ -23,6 +23,17 @@ export type CustomerProfile = AdminUser & {
 
 export type AddressPayload = Pick<ProfileAddress, "receiverName" | "phone" | "province" | "district" | "ward" | "detail"> & { isDefault?: boolean };
 
+export type CustomerOrderHistory = {
+  id: number;
+  orderCode: string;
+  status: "PENDING" | "CONFIRMED" | "PACKING" | "SHIPPING" | "COMPLETED" | "CANCELLED";
+  totalAmount: number;
+  createdAt: string;
+  items: Array<{ id: number; productName: string; unit: string; quantity: number }>;
+  payment: { method: string; status: string; paidAt: string | null } | null;
+  shipment: { status: string; carrier: string | null; trackingCode: string | null } | null;
+};
+
 async function request<T>(path: string, options: RequestInit = {}) {
   const token = adminAuth.getToken();
   if (!token) throw new Error("Vui lòng đăng nhập để tiếp tục.");
@@ -46,4 +57,5 @@ export const profileApi = {
   createAddress: (payload: AddressPayload) => request<ProfileAddress>("/auth/me/addresses", { method: "POST", body: JSON.stringify(payload) }),
   updateAddress: (id: number, payload: Partial<AddressPayload>) => request<ProfileAddress>(`/auth/me/addresses/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
   deleteAddress: (id: number) => request<void>(`/auth/me/addresses/${id}`, { method: "DELETE" }),
+  orderHistory: () => request<CustomerOrderHistory[]>("/auth/me/orders"),
 };

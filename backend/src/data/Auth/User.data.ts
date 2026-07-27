@@ -1,4 +1,5 @@
 import { prisma } from "../prisma.js";
+import type { Prisma } from "@prisma/client";
 
 type AddressPayload = {
   receiverName: string;
@@ -41,6 +42,42 @@ export const userData = {
 
   findPasswordById(id: number) {
     return prisma.user.findUnique({ where: { id }, select: { id: true, passwordHash: true } });
+  },
+
+  listOrderHistory(userId: number) {
+    return prisma.order.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        orderCode: true,
+        status: true,
+        totalAmount: true,
+        createdAt: true,
+        items: {
+          select: {
+            id: true,
+            quantity: true,
+            product: { select: { name: true, unit: true } },
+          },
+        },
+        payments: { select: { method: true, status: true, paidAt: true }, orderBy: { id: "asc" }, take: 1 },
+        shipment: { select: { status: true, carrier: true, trackingCode: true } },
+      },
+    });
+  },
+
+  async claimGuestOrders(userId: number) {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, phone: true } });
+    if (!user) return;
+
+    const conditions: Prisma.OrderWhereInput[] = [{ customerEmail: user.email }];
+    if (user.phone) conditions.push({ customerPhone: user.phone });
+
+    await prisma.order.updateMany({
+      where: { userId: null, OR: conditions },
+      data: { userId },
+    });
   },
 
   updateProfile(id: number, data: { fullName?: string; phone?: string | null }) {

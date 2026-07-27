@@ -15,6 +15,7 @@ import { AboutPage } from "./pages/client/About/AboutPage";
 import { AuthPage } from "./pages/client/Auth/AuthPage";
 import { CartPage } from "./pages/client/Cart/CartPage";
 import { PaymentResultPage } from "./pages/client/Payment/PaymentResultPage";
+import { OrderTrackingPage } from "./pages/client/Tracking/OrderTrackingPage";
 import { HomePage } from "./pages/client/Home/HomePage";
 import { ProductDetailPage } from "./pages/client/Products/ProductDetailPage";
 import { ProductsPage } from "./pages/client/Products/ProductsPage";
@@ -22,6 +23,7 @@ import { QuotePage } from "./pages/client/Quote/QuotePage";
 import { AddressesPage } from "./pages/client/Account/AddressesPage";
 import { ChangePasswordPage } from "./pages/client/Account/ChangePasswordPage";
 import { ProfilePage } from "./pages/client/Account/ProfilePage";
+import { OrderHistoryPage } from "./pages/client/Account/OrderHistoryPage";
 
 export default function App() {
   return (
@@ -32,8 +34,10 @@ export default function App() {
         <Route path="/san-pham/:id" element={<ProductDetailPage />} />
         <Route path="/gio-hang" element={<CartPage />} />
         <Route path="/thanh-toan/ket-qua" element={<PaymentResultPage />} />
+        <Route path="/tra-cuu-don-hang" element={<OrderTrackingPage />} />
         <Route path="/tai-khoan" element={<Navigate to="/tai-khoan/thong-tin" replace />} />
         <Route path="/tai-khoan/thong-tin" element={<ProfilePage />} />
+        <Route path="/tai-khoan/don-hang" element={<OrderHistoryPage />} />
         <Route path="/tai-khoan/dia-chi" element={<AddressesPage />} />
         <Route path="/tai-khoan/doi-mat-khau" element={<ChangePasswordPage />} />
         <Route path="/dich-vu" element={<Navigate to="/ve-nha-may" replace />} />

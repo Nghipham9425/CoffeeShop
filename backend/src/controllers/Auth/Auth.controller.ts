@@ -88,4 +88,8 @@ export const authController = {
     }
     res.status(204).send();
   },
+
+  async orderHistory(req: Request, res: Response) {
+    res.json(await authService.orderHistory(req.user!.userId));
+  },
 };

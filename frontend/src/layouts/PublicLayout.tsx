@@ -1,4 +1,4 @@
-import { Clock3, KeyRound, Leaf, LogIn, LogOut, MapPin, Menu, Phone, ShoppingCart, UserRound } from "lucide-react";
+import { Clock3, KeyRound, Leaf, LogIn, LogOut, MapPin, Menu, Package, PackageSearch, Phone, ShoppingCart, UserRound } from "lucide-react";
 import { FaFacebookF, FaInstagram, FaTiktok, FaYoutube } from "react-icons/fa";
 import { NavLink, Outlet } from "react-router-dom";
 import { useCart } from "../contexts/CartContext";
@@ -82,6 +82,9 @@ export function PublicLayout() {
                     <NavLink to="/tai-khoan/dia-chi" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold text-stone-700 transition-colors hover:bg-stone-100 hover:text-[var(--coffee)]">
                       <MapPin size={17} /> Sổ địa chỉ
                     </NavLink>
+                    <NavLink to="/tai-khoan/don-hang" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold text-stone-700 transition-colors hover:bg-stone-100 hover:text-[var(--coffee)]">
+                      <Package size={17} /> Lịch sử đơn hàng
+                    </NavLink>
                     <NavLink to="/tai-khoan/doi-mat-khau" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold text-stone-700 transition-colors hover:bg-stone-100 hover:text-[var(--coffee)]">
                       <KeyRound size={17} /> Đổi mật khẩu
                     </NavLink>
@@ -100,6 +103,12 @@ export function PublicLayout() {
                   <LogIn size={17} /> Đăng nhập
                 </NavLink>
               )}
+              <NavLink
+                to="/tra-cuu-don-hang"
+                className="hidden h-10 items-center gap-2 rounded-full border border-stone-200 px-4 text-sm font-black hover:bg-stone-100 md:flex"
+              >
+                <PackageSearch size={17} /> Tra cứu đơn
+              </NavLink>
               <NavLink
                 to="/gio-hang"
                 className="relative grid h-10 w-10 place-items-center rounded-full border border-stone-200 hover:bg-stone-100"

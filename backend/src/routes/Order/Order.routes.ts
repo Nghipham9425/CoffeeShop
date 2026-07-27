@@ -2,11 +2,12 @@ import { Router } from "express";
 import { UserRole } from "@prisma/client";
 import { orderController } from "../../controllers/Order/Order.controller.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
-import { authMiddleware, authorizeRoles } from "../../middleware/authMiddleware.js";
+import { authMiddleware, authorizeRoles, optionalAuthMiddleware } from "../../middleware/authMiddleware.js";
 
 export const orderRoutes = Router();
 
-orderRoutes.post("/checkout", asyncHandler(orderController.checkout));
+orderRoutes.post("/checkout", optionalAuthMiddleware, asyncHandler(orderController.checkout));
+orderRoutes.get("/track", asyncHandler(orderController.trackOrder));
 orderRoutes.get("/:id/payment-status", asyncHandler(orderController.getPublicPaymentStatus));
 
 orderRoutes.use(authMiddleware, authorizeRoles(UserRole.ADMIN, UserRole.SALES, UserRole.ACCOUNTANT));
