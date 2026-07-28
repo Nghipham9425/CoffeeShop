@@ -16,6 +16,13 @@ export const userData = {
     return prisma.user.findUnique({ where: { email } });
   },
 
+  findActiveByEmailInsensitive(email: string) {
+    return prisma.user.findFirst({
+      where: { email: { equals: email, mode: "insensitive" }, isActive: true },
+      select: { id: true, fullName: true, email: true },
+    });
+  },
+
   findById(id: number) {
     return prisma.user.findUnique({
       where: { id },
@@ -90,6 +97,42 @@ export const userData = {
 
   updatePassword(id: number, passwordHash: string) {
     return prisma.user.update({ where: { id }, data: { passwordHash } });
+  },
+
+  async createPasswordResetToken(userId: number, tokenHash: string, expiresAt: Date) {
+    return prisma.$transaction(async (transaction) => {
+      await transaction.passwordResetToken.deleteMany({ where: { userId } });
+      return transaction.passwordResetToken.create({
+        data: { userId, tokenHash, expiresAt },
+      });
+    });
+  },
+
+  findPasswordResetToken(tokenHash: string) {
+    return prisma.passwordResetToken.findUnique({
+      where: { tokenHash },
+      select: { id: true, userId: true, expiresAt: true, usedAt: true },
+    });
+  },
+
+  async consumePasswordResetToken(tokenId: number, userId: number, passwordHash: string) {
+    return prisma.$transaction(async (transaction) => {
+      const consumed = await transaction.passwordResetToken.updateMany({
+        where: { id: tokenId, usedAt: null, expiresAt: { gt: new Date() } },
+        data: { usedAt: new Date() },
+      });
+
+      if (consumed.count !== 1) return false;
+
+      await transaction.user.update({
+        where: { id: userId },
+        data: { passwordHash },
+      });
+      await transaction.passwordResetToken.deleteMany({
+        where: { userId, id: { not: tokenId } },
+      });
+      return true;
+    });
   },
 
   listAddresses(userId: number) {

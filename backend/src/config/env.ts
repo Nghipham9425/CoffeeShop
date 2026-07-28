@@ -21,6 +21,12 @@ export const env = {
   sepaySecretKey: process.env.SEPAY_SECRET_KEY?.trim(),
   clientAppUrl: process.env.CLIENT_APP_URL?.trim() ?? (clientOrigins[0] ?? "http://localhost:3000"),
   sepayPaymentExpiryMinutes: Number(process.env.SEPAY_PAYMENT_EXPIRY_MINUTES ?? 30),
+  smtpHost: process.env.SMTP_HOST?.trim(),
+  smtpPort: Number(process.env.SMTP_PORT ?? 587),
+  smtpUser: process.env.SMTP_USER?.trim(),
+  smtpPass: process.env.SMTP_PASS?.trim(),
+  mailFrom: process.env.MAIL_FROM?.trim(),
+  resetPasswordExpiresMinutes: Number(process.env.RESET_PASSWORD_EXPIRES_MINUTES ?? 30),
 };
 
 export const isDevelopment = env.nodeEnv === "development";

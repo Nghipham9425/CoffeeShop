@@ -12,6 +12,25 @@ export const loginSchema = z.object({
   password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự.").max(80, "Mật khẩu không được vượt quá 80 ký tự."),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().email("Email không đúng định dạng.").max(160, "Email không được vượt quá 160 ký tự."),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(32, "Liên kết đặt lại mật khẩu không hợp lệ.").max(200),
+  newPassword: z
+    .string()
+    .min(8, "Mật khẩu mới phải có ít nhất 8 ký tự.")
+    .max(80, "Mật khẩu mới không được vượt quá 80 ký tự.")
+    .regex(/[a-z]/, "Mật khẩu mới phải có ít nhất một chữ thường.")
+    .regex(/[A-Z]/, "Mật khẩu mới phải có ít nhất một chữ hoa.")
+    .regex(/[0-9]/, "Mật khẩu mới phải có ít nhất một chữ số."),
+  confirmPassword: z.string().min(1, "Vui lòng xác nhận mật khẩu mới."),
+}).refine((value) => value.newPassword === value.confirmPassword, {
+  message: "Xác nhận mật khẩu chưa khớp.",
+  path: ["confirmPassword"],
+});
+
 export const updateProfileSchema = z.object({
   fullName: z.string().min(2, "Họ tên phải có ít nhất 2 ký tự.").max(120, "Họ tên không được vượt quá 120 ký tự.").optional(),
   phone: z.string().min(8, "Số điện thoại phải có ít nhất 8 ký tự.").max(20, "Số điện thoại không được vượt quá 20 ký tự.").nullable().optional(),
@@ -42,6 +61,8 @@ export const updateAddressSchema = addressSchema.partial().refine((value) => Obj
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export type AddressInput = z.infer<typeof addressSchema>;

@@ -1,8 +1,10 @@
 import bcrypt from "bcryptjs";
+import { createHash, randomBytes } from "node:crypto";
 import jwt, { type SignOptions } from "jsonwebtoken";
 import { env } from "../../config/env.js";
 import { userData } from "../../data/Auth/User.data.js";
-import type { LoginInput, RegisterInput } from "../../validators/Auth/Auth.validator.js";
+import { mailService } from "../Mail/Mail.service.js";
+import type { ForgotPasswordInput, LoginInput, RegisterInput, ResetPasswordInput } from "../../validators/Auth/Auth.validator.js";
 import type { AddressInput, ChangePasswordInput, UpdateAddressInput, UpdateProfileInput } from "../../validators/Auth/Auth.validator.js";
 
 function signToken(payload: { userId: number; role: string }) {
@@ -59,6 +61,36 @@ export const authService = {
       },
       token,
     };
+  },
+
+  async forgotPassword(input: ForgotPasswordInput) {
+    const user = await userData.findActiveByEmailInsensitive(input.email);
+    if (!user) return;
+
+    const token = randomBytes(32).toString("hex");
+    const tokenHash = hashResetToken(token);
+    const expiresAt = new Date(Date.now() + env.resetPasswordExpiresMinutes * 60_000);
+    await userData.createPasswordResetToken(user.id, tokenHash, expiresAt);
+
+    const resetUrl = new URL("/dat-lai-mat-khau", env.clientAppUrl);
+    resetUrl.searchParams.set("token", token);
+
+    await mailService.sendPasswordResetEmail({
+      email: user.email,
+      fullName: user.fullName,
+      resetUrl: resetUrl.toString(),
+    });
+  },
+
+  async resetPassword(input: ResetPasswordInput) {
+    const tokenRecord = await userData.findPasswordResetToken(hashResetToken(input.token));
+    if (!tokenRecord || tokenRecord.usedAt || tokenRecord.expiresAt <= new Date()) {
+      throw new Error("INVALID_RESET_TOKEN");
+    }
+
+    const passwordHash = await bcrypt.hash(input.newPassword, 10);
+    const consumed = await userData.consumePasswordResetToken(tokenRecord.id, tokenRecord.userId, passwordHash);
+    if (!consumed) throw new Error("INVALID_RESET_TOKEN");
   },
 
   async profile(userId: number) {
@@ -120,3 +152,7 @@ export const authService = {
     }));
   },
 };
+
+function hashResetToken(token: string) {
+  return createHash("sha256").update(token).digest("hex");
+}

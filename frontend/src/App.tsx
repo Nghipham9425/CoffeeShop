@@ -13,6 +13,8 @@ import { QuotesPage as AdminQuotesPage } from "./pages/admin/quotes/QuotesPage";
 import { ReportsPage as AdminReportsPage } from "./pages/admin/reports/ReportsPage";
 import { AboutPage } from "./pages/client/About/AboutPage";
 import { AuthPage } from "./pages/client/Auth/AuthPage";
+import { ForgotPasswordPage } from "./pages/client/Auth/ForgotPasswordPage";
+import { ResetPasswordPage } from "./pages/client/Auth/ResetPasswordPage";
 import { CartPage } from "./pages/client/Cart/CartPage";
 import { PaymentResultPage } from "./pages/client/Payment/PaymentResultPage";
 import { OrderTrackingPage } from "./pages/client/Tracking/OrderTrackingPage";
@@ -47,6 +49,8 @@ export default function App() {
       </Route>
       <Route path="/dang-nhap" element={<AuthPage mode="login" />} />
       <Route path="/dang-ky" element={<AuthPage mode="register" />} />
+      <Route path="/quen-mat-khau" element={<ForgotPasswordPage />} />
+      <Route path="/dat-lai-mat-khau" element={<ResetPasswordPage />} />
       <Route path="/admin/dang-nhap" element={<AdminLoginPage />} />
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<AdminHomePage />} />

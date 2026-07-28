@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { authService } from "../../services/Auth/Auth.service.js";
-import { addressSchema, changePasswordSchema, loginSchema, registerSchema, updateAddressSchema, updateProfileSchema } from "../../validators/Auth/Auth.validator.js";
+import { addressSchema, changePasswordSchema, forgotPasswordSchema, loginSchema, registerSchema, resetPasswordSchema, updateAddressSchema, updateProfileSchema } from "../../validators/Auth/Auth.validator.js";
 
 export const authController = {
   async register(req: Request, res: Response) {
@@ -31,6 +31,31 @@ export const authController = {
         return;
       }
 
+      throw error;
+    }
+  },
+
+  async forgotPassword(req: Request, res: Response) {
+    const payload = forgotPasswordSchema.parse(req.body);
+    await authService.forgotPassword(payload);
+    res.json({
+      message: "Nếu email tồn tại trong hệ thống, hướng dẫn đặt lại mật khẩu đã được gửi.",
+    });
+  },
+
+  async resetPassword(req: Request, res: Response) {
+    const payload = resetPasswordSchema.parse(req.body);
+
+    try {
+      await authService.resetPassword(payload);
+      res.json({ message: "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập bằng mật khẩu mới." });
+    } catch (error) {
+      if (error instanceof Error && error.message === "INVALID_RESET_TOKEN") {
+        res.status(400).json({
+          message: "Liên kết đặt lại mật khẩu không hợp lệ, đã hết hạn hoặc đã được sử dụng.",
+        });
+        return;
+      }
       throw error;
     }
   },

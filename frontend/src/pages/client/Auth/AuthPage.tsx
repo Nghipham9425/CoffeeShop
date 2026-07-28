@@ -137,9 +137,9 @@ export function AuthPage({ mode, adminOnly = false, redirectTo = "/admin" }: Aut
           />
 
           {isLogin ? (
-            <button type="button" onClick={() => setMessage("Chức năng quên mật khẩu sẽ được kết nối cùng dịch vụ gửi email ở bước tiếp theo.")} className="justify-self-end text-sm font-bold text-[#514c49] hover:text-[#553B2F] hover:underline">
+            <Link to="/quen-mat-khau" className="justify-self-end text-sm font-bold text-[#514c49] hover:text-[#553B2F] hover:underline">
               Quên mật khẩu?
-            </button>
+            </Link>
           ) : null}
 
           {error ? <p className="rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{error}</p> : null}

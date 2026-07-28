@@ -1,6 +1,6 @@
 # AGENT.md - Tiến độ dự án Phú Tài Coffee Works
 
-Cập nhật lần cuối: 07/07/2026
+Cập nhật lần cuối: 28/07/2026
 Thư mục dự án: `D:\Coffee_B2B`
 
 ## Mục tiêu
@@ -39,6 +39,16 @@ Database/dev:
 ## Cập nhật mới nhất
 
 Đã hoàn thành trong lượt gần nhất:
+- Hoàn thiện luồng quên mật khẩu và đặt lại mật khẩu:
+  - `POST /api/auth/forgot-password`
+  - `POST /api/auth/reset-password`
+  - Gửi email thật qua Gmail SMTP.
+  - Token ngẫu nhiên chỉ lưu bản băm trong PostgreSQL, dùng một lần và có thời hạn.
+  - Giới hạn tần suất gọi API để hạn chế spam email và thử token liên tục.
+- Thêm trang `/quen-mat-khau` và `/dat-lai-mat-khau`, nối từ trang đăng nhập.
+- Thêm bảng `password_reset_tokens`.
+- Đã kiểm tra kết nối SMTP và gửi email thử thành công.
+- Đã bổ sung hai API khôi phục mật khẩu vào Swagger.
 - Backend mở CORS cho `localhost:3000`, `127.0.0.1:3000`, `localhost:5173`, `127.0.0.1:5173` qua `CLIENT_ORIGINS`.
 - Thêm API admin cho đơn hàng:
   - `GET /api/orders`
@@ -80,6 +90,8 @@ Public:
 - `GET /api/products/:id`
 - `POST /api/auth/register`
 - `POST /api/auth/login`
+- `POST /api/auth/forgot-password`
+- `POST /api/auth/reset-password`
 - `POST /api/quote-requests`
 - `POST /api/contact-messages`
 
@@ -98,8 +110,8 @@ Admin/Sales:
 
 Nguồn chuẩn: `backend/prisma/schema.prisma`
 
-Hiện có 25 bảng:
-- Tài khoản: `users`, `addresses`
+Hiện có 26 bảng:
+- Tài khoản: `users`, `addresses`, `password_reset_tokens`
 - Sản phẩm/kho: `categories`, `products`, `product_prices`, `inventories`, `stock_movements`
 - B2C: `promotions`, `orders`, `order_items`, `payments`, `shipments`, `reviews`, `loyalty_profiles`
 - B2B/công nợ: `business_customers`, `quote_requests`, `contracts`, `invoices`, `debts`
@@ -119,6 +131,9 @@ Public pages:
 - `frontend/src/pages/client/Quote/QuotePage.tsx`
 - `frontend/src/pages/client/About/AboutPage.tsx`
 - `frontend/src/pages/client/Contact/ContactPage.tsx`
+- `frontend/src/pages/client/Auth/AuthPage.tsx`
+- `frontend/src/pages/client/Auth/ForgotPasswordPage.tsx`
+- `frontend/src/pages/client/Auth/ResetPasswordPage.tsx`
 
 Admin pages:
 - `frontend/src/pages/admin/home/HomePage.tsx`
@@ -193,10 +208,10 @@ Password: Customer@123
 ## Việc nên làm tiếp
 
 Ưu tiên gần nhất:
-1. Test thủ công toàn bộ admin CRUD trên browser với backend và database thật.
-2. Làm API tạo đơn hàng B2C từ giỏ hàng phía client.
+1. Tích hợp đăng nhập Google thật; Facebook OAuth có thể làm sau.
+2. Test thủ công toàn bộ admin CRUD trên browser với backend và database thật.
 3. Làm promotion/voucher CRUD và áp dụng mã giảm giá khi checkout.
 4. Làm CRUD hợp đồng, hóa đơn, công nợ B2B.
 5. Làm chatbot tư vấn mua hàng bản mock trước, AI thật sau.
 6. Thêm test backend cho auth, product, order, inventory.
-7. Bổ sung Swagger docs cho các endpoint mới.
+7. Tiếp tục bổ sung Swagger docs cho các endpoint còn thiếu.
