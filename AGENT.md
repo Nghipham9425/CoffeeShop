@@ -1,5 +1,18 @@
 # AGENT.md - Tiến độ dự án Phú Tài Coffee Works
 
+## Cập nhật kho, giá và đánh giá (01/08/2026)
+
+- Màn quản lý kho hiển thị tồn hiện tại theo từng sản phẩm; mỗi dòng có thao tác Nhập kho, Xuất kho, Kiểm kê và Lịch sử.
+- Backend từ chối xuất vượt tồn và ghi lại tồn sau mỗi phiếu kho.
+- API sản phẩm trả tồn khả dụng; danh sách, chi tiết sản phẩm và giỏ hàng giới hạn số lượng mua theo tồn thực tế.
+- Checkout B2C trừ tồn trong transaction và dùng cập nhật có điều kiện để không phát sinh tồn âm khi nhiều khách đặt đồng thời.
+- Hủy đơn đang chờ hoặc đã xác nhận hoàn lại đúng số lượng vào kho và tạo phiếu hoàn kho; thao tác hủy lặp lại bị từ chối.
+- Sản phẩm mới tự tạo bản ghi tồn kho mặc định bằng 0; dữ liệu sản phẩm cũ đã được bổ sung bản ghi kho còn thiếu.
+- Giá bán lẻ được chỉnh trực tiếp trên sản phẩm và lưu lịch sử giá cũ, giá mới, người sửa, thời điểm sửa.
+- Đánh giá từ đơn hàng hoàn thành hiển thị ngay; quản trị viên chỉ ẩn nội dung vi phạm và có thể hiện lại.
+- Sản phẩm và danh mục đã ẩn vẫn xuất hiện trong trang quản trị để khôi phục, nhưng không xuất hiện ở website khách hàng.
+- Đã kiểm tra build frontend/backend và xác minh API xuất vượt tồn, ẩn/hiện sản phẩm, ẩn/hiện danh mục.
+
 Cập nhật lần cuối: 28/07/2026
 Thư mục dự án: `D:\Coffee_B2B`
 
@@ -49,6 +62,12 @@ Database/dev:
 - Thêm bảng `password_reset_tokens`.
 - Đã kiểm tra kết nối SMTP và gửi email thử thành công.
 - Đã bổ sung hai API khôi phục mật khẩu vào Swagger.
+- Hoàn thiện đăng nhập Google bằng Google Identity Services:
+  - `POST /api/auth/google`
+  - Backend xác minh Google ID token và audience trước khi cấp JWT của hệ thống.
+  - Tự liên kết tài khoản cũ theo email đã xác minh hoặc tạo tài khoản mới.
+  - Thêm bảng `oauth_accounts` để lưu liên kết nhà cung cấp OAuth.
+  - Frontend chỉ hoạt động khi cả backend và frontend dùng cùng `GOOGLE_CLIENT_ID`.
 - Backend mở CORS cho `localhost:3000`, `127.0.0.1:3000`, `localhost:5173`, `127.0.0.1:5173` qua `CLIENT_ORIGINS`.
 - Thêm API admin cho đơn hàng:
   - `GET /api/orders`
@@ -110,8 +129,8 @@ Admin/Sales:
 
 Nguồn chuẩn: `backend/prisma/schema.prisma`
 
-Hiện có 26 bảng:
-- Tài khoản: `users`, `addresses`, `password_reset_tokens`
+Hiện có 27 bảng:
+- Tài khoản: `users`, `oauth_accounts`, `addresses`, `password_reset_tokens`
 - Sản phẩm/kho: `categories`, `products`, `product_prices`, `inventories`, `stock_movements`
 - B2C: `promotions`, `orders`, `order_items`, `payments`, `shipments`, `reviews`, `loyalty_profiles`
 - B2B/công nợ: `business_customers`, `quote_requests`, `contracts`, `invoices`, `debts`
@@ -208,10 +227,34 @@ Password: Customer@123
 ## Việc nên làm tiếp
 
 Ưu tiên gần nhất:
-1. Tích hợp đăng nhập Google thật; Facebook OAuth có thể làm sau.
+1. Cấu hình Google Web Client ID và test đăng nhập Google thật trên trình duyệt; Facebook OAuth có thể làm sau.
 2. Test thủ công toàn bộ admin CRUD trên browser với backend và database thật.
-3. Làm promotion/voucher CRUD và áp dụng mã giảm giá khi checkout.
+3. Hoàn thiện giới hạn sử dụng voucher theo khách hàng và bổ sung thống kê hiệu quả chương trình.
 4. Làm CRUD hợp đồng, hóa đơn, công nợ B2B.
 5. Làm chatbot tư vấn mua hàng bản mock trước, AI thật sau.
 6. Thêm test backend cho auth, product, order, inventory.
 7. Tiếp tục bổ sung Swagger docs cho các endpoint còn thiếu.
+
+## Cập nhật nghiệp vụ thương mại điện tử
+
+Đã hoàn thành:
+- Voucher là mã giảm giá độc lập: quản trị viên tạo mã, khách hàng nhập mã ở bước thanh toán, backend kiểm tra thời hạn, trạng thái, giá trị đơn tối thiểu và tự tính số tiền giảm.
+- Chính sách giá được tách khỏi voucher: hỗ trợ giá bán lẻ, bán sỉ, VIP/B2B, số lượng tối thiểu và thời gian áp dụng.
+- Mọi lần cập nhật chính sách giá đều ghi lại giá cũ, giá mới, người thực hiện và thời điểm thay đổi để tra cứu lịch sử.
+- Khách chỉ được đánh giá sản phẩm thuộc đơn đã hoàn thành; quản trị viên có thể duyệt hoặc từ chối đánh giá.
+- Khách có thể hủy đơn đang chờ xử lý và gửi yêu cầu đổi, trả hoặc hoàn tiền cho đơn đã hoàn thành.
+- Quy trình báo giá B2B đã có lập báo giá chi tiết, phản hồi chấp nhận/từ chối và chuyển báo giá thành hợp đồng hoặc đơn hàng.
+
+Trang quản trị mới:
+- Voucher: `/admin/khuyen-mai`
+- Chính sách giá và lịch sử giá: `/admin/chinh-sach-gia`
+- Đánh giá sản phẩm: `/admin/danh-gia`
+- Đổi trả và hoàn tiền: `/admin/doi-tra`
+
+## Cập nhật SEO và điều hướng nội dung
+
+- Trang Liên hệ độc lập đã được bỏ khỏi giao diện vì trùng với quy trình Báo giá; URL cũ tự chuyển sang `/bao-gia`.
+- URL chi tiết sản phẩm dùng slug thân thiện, ví dụ `/san-pham/ca-phe-sua-hoa-tan-3-trong-1`.
+- Link sản phẩm bằng ID cũ vẫn được hỗ trợ và tự chuyển sang URL slug chuẩn.
+- Trang danh sách và chi tiết sản phẩm có title, meta description, canonical URL, Open Graph, Twitter Card và dữ liệu có cấu trúc Product theo Schema.org.
+- API công khai đã có endpoint tra cứu sản phẩm bằng slug: `GET /api/products/slug/:slug`.

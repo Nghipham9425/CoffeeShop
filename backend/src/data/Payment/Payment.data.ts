@@ -96,6 +96,8 @@ export const paymentData = {
             productId: item.productId,
             type: StockMovementType.RETURN,
             quantity: item.quantity,
+            warehouse: inventory.warehouse,
+            balanceAfter: inventory.quantity + item.quantity,
             reason: "Hoàn tồn do đơn SePay quá hạn thanh toán.",
             reference: order.orderCode,
           },

@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { ChatbotSender } from '@prisma/client';
+import { ChatbotSender, type UserRole } from '@prisma/client';
 import { env } from '../../config/env.js';
 import { chatbotData } from '../../data/Chatbot/Chatbot.data.js';
 import { prisma } from '../../data/prisma.js';
@@ -10,10 +10,10 @@ export class ChatbotService {
   static async processMessage(
     conversationId: number,
     message: string,
-    role: 'ADMIN' | 'CUSTOMER',
+    role: UserRole,
     userName: string = 'bạn'
   ) {
-    const senderType = role === 'ADMIN' ? ChatbotSender.STAFF : ChatbotSender.CUSTOMER;
+    const senderType = role === 'CUSTOMER' ? ChatbotSender.CUSTOMER : ChatbotSender.STAFF;
 
     await chatbotData.saveMessage({
       conversationId,
@@ -59,14 +59,14 @@ export class ChatbotService {
 
     let systemInstruction = '';
 
-    if (role === 'ADMIN') {
+    if (role !== 'CUSTOMER') {
       const ordersInfo = await prisma.order.aggregate({
         _count: { id: true },
         _sum: { totalAmount: true },
       });
 
       systemInstruction = `
-        XÁC NHẬN VAI TRÒ: Người đang trò chuyện với bạn CHẮC CHẮN là ADMIN (Quản lý) của Phú Tài Coffee Works.
+        XÁC NHẬN VAI TRÒ: Người đang trò chuyện là nhân sự nội bộ có vai trò ${role} của Phú Tài Coffee Works.
         Vai trò của bạn: Trợ lý AI Phân tích Dữ liệu và Tư vấn Chiến lược kinh doanh.
         
         DỮ LIỆU CỦA HỆ THỐNG:
@@ -79,10 +79,11 @@ export class ChatbotService {
         NGUYÊN TẮC LÀM VIỆC VỚI ADMIN (BẮT BUỘC TUÂN THỦ):
         1. KHÔNG xưng hô là "nhân viên chăm sóc khách hàng".
         2. BỎ QUA mọi câu từ khách sáo. Tuyệt đối KHÔNG dùng "Chào bạn", "dạ", "vâng", "ạ", "cảm ơn bạn".
-        3. Cách xưng hô duy nhất: Tự xưng là "Trợ lý AI", gọi người dùng là "Quản lý".
+        3. Tự xưng là "Trợ lý AI". Gọi ADMIN là "Quản lý"; SALES là "Nhân viên bán hàng"; WAREHOUSE là "Nhân viên kho"; ACCOUNTANT là "Nhân viên kế toán".
         4. Trả lời khô khan, dứt khoát, đi thẳng vào số liệu, tập trung 100% vào phân tích nghiệp vụ.
         5. NẾU QUẢN LÝ YÊU CẦU TÌM SẢN PHẨM MỚI: Dựa vào Danh mục Sản phẩm đang kinh doanh bên trên, hãy tìm ra những dòng sản phẩm/xu hướng cà phê trên thị trường mà cửa hàng CHƯA BÁN (Ví dụ: Cold Brew, Specialty Coffee, Cà phê túi lọc...) để đề xuất nhập hàng.
-        6. Nếu không có số liệu doanh thu chi tiết từng sản phẩm, hãy mạnh dạn báo cáo "Hệ thống chỉ cung cấp tổng doanh thu, chưa có chi tiết từng mã", sau đó tiếp tục tư vấn chiến lược.
+        6. Chỉ trả lời đúng phạm vi vai trò: SALES về khách hàng, giá và đơn hàng; WAREHOUSE về tồn kho và giao nhận; ACCOUNTANT về thanh toán và doanh thu; ADMIN được xem tổng quan.
+        7. Nếu không có số liệu chi tiết, phải nói rõ hệ thống chưa cung cấp dữ liệu đó, không tự suy đoán.
         ${noMarkdownRule}
       `;
     } else {

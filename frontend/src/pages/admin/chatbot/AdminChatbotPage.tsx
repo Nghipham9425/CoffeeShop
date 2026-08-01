@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { AdminPageShell } from '../shared/AdminPageShell';
 import { Card } from '../../../components/ui/card';
 import { Send, Bot, User, MessageSquare, Plus, Trash2 } from 'lucide-react';
+import { adminAuth } from '../../../lib/adminApi';
 
 type Message = { id: string; sender: 'USER' | 'BOT'; content: string };
 type Conversation = { id: number; topic: string; updatedAt: string };
@@ -20,6 +21,9 @@ const AdminChatbotPage = () => {
   }, [messages]);
 
   const getAuthToken = () => {
+    const sessionToken = adminAuth.getToken();
+    if (sessionToken) return sessionToken;
+
     const commonKeys = ['token', 'admin_token', 'accessToken', 'access_token', 'jwt', 'auth_token'];
     for (const k of commonKeys) {
       const val = localStorage.getItem(k);

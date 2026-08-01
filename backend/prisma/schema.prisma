@@ -15,12 +15,25 @@ enum UserRole {
   CUSTOMER
 }
 
+enum OAuthProvider {
+  GOOGLE
+  FACEBOOK
+}
+
 enum QuoteRequestStatus {
   NEW
   CONTACTED
   QUOTED
+  ACCEPTED
+  REJECTED
+  CONVERTED
   CLOSED
   CANCELLED
+}
+
+enum OrderChannel {
+  B2C
+  B2B
 }
 
 enum OrderStatus {
@@ -109,6 +122,21 @@ enum ReviewStatus {
   REJECTED
 }
 
+enum ReturnRequestType {
+  RETURN
+  EXCHANGE
+  REFUND
+}
+
+enum ReturnRequestStatus {
+  REQUESTED
+  REVIEWING
+  APPROVED
+  REJECTED
+  COMPLETED
+  CANCELLED
+}
+
 enum PurchaseOrderStatus {
   DRAFT
   ORDERED
@@ -140,8 +168,26 @@ model User {
   loyaltyProfile       LoyaltyProfile?
   chatbotConversations ChatbotConversation[]
   passwordResetTokens  PasswordResetToken[]
+  oauthAccounts        OAuthAccount[]
+  returnRequests       ReturnRequest[]
+  priceAdjustments     PriceAdjustment[]
 
   @@map("users")
+}
+
+model OAuthAccount {
+  id             Int           @id @default(autoincrement())
+  userId         Int           @map("user_id")
+  provider       OAuthProvider
+  providerUserId String        @map("provider_user_id")
+  providerEmail  String?       @map("provider_email")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+  @@map("oauth_accounts")
 }
 
 model PasswordResetToken {
@@ -210,6 +256,8 @@ model Product {
   reviews        Review[]
   purchaseItems  PurchaseOrderItem[]
   prices         ProductPrice[]
+  priceAdjustments PriceAdjustment[]
+  quoteRequestItems QuoteRequestItem[]
 
   @@map("products")
 }
@@ -231,12 +279,31 @@ model ProductPrice {
   @@map("product_prices")
 }
 
+model PriceAdjustment {
+  id             Int              @id @default(autoincrement())
+  productId      Int              @map("product_id")
+  createdById    Int?             @map("created_by_id")
+  priceType      ProductPriceType @map("price_type")
+  minQuantity    Int              @default(1) @map("min_quantity")
+  oldPrice       Decimal?         @map("old_price") @db.Decimal(12, 2)
+  newPrice       Decimal          @map("new_price") @db.Decimal(12, 2)
+  startAt        DateTime?        @map("start_at")
+  endAt          DateTime?        @map("end_at")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  product        Product          @relation(fields: [productId], references: [id])
+  createdBy      User?            @relation(fields: [createdById], references: [id])
+
+  @@index([productId, createdAt])
+  @@index([createdById])
+  @@map("price_adjustments")
+}
+
 model Inventory {
   id          Int      @id @default(autoincrement())
   productId   Int      @map("product_id")
   quantity    Int      @default(0)
   minQuantity Int      @default(0) @map("min_quantity")
-  warehouse   String   @default("Kho chinh")
+  warehouse   String   @default("Kho thành phẩm")
   updatedAt   DateTime @updatedAt @map("updated_at")
   product     Product  @relation(fields: [productId], references: [id])
 
@@ -245,15 +312,18 @@ model Inventory {
 }
 
 model StockMovement {
-  id        Int               @id @default(autoincrement())
-  productId Int               @map("product_id")
-  type      StockMovementType
-  quantity  Int
-  reason    String?
-  reference String?
-  createdAt DateTime          @default(now()) @map("created_at")
-  product   Product           @relation(fields: [productId], references: [id])
+  id           Int               @id @default(autoincrement())
+  productId    Int               @map("product_id")
+  type         StockMovementType
+  quantity     Int
+  warehouse    String            @default("Kho thành phẩm")
+  balanceAfter Int?              @map("balance_after")
+  reason       String?
+  reference    String?
+  createdAt    DateTime          @default(now()) @map("created_at")
+  product      Product           @relation(fields: [productId], references: [id])
 
+  @@index([productId, createdAt])
   @@map("stock_movements")
 }
 
@@ -279,6 +349,9 @@ model Order {
   userId          Int?         @map("user_id")
   addressId       Int?         @map("address_id")
   promotionId     Int?         @map("promotion_id")
+  businessCustomerId Int?      @map("business_customer_id")
+  quoteRequestId  Int?         @unique @map("quote_request_id")
+  channel         OrderChannel @default(B2C)
   orderCode       String       @unique @map("order_code")
   customerName    String       @map("customer_name")
   customerPhone   String       @map("customer_phone")
@@ -296,10 +369,13 @@ model Order {
   user            User?        @relation(fields: [userId], references: [id])
   address         Address?     @relation(fields: [addressId], references: [id])
   promotion       Promotion?   @relation(fields: [promotionId], references: [id])
+  businessCustomer BusinessCustomer? @relation(fields: [businessCustomerId], references: [id])
+  quoteRequest    QuoteRequest? @relation(fields: [quoteRequestId], references: [id])
   items           OrderItem[]
   payments        Payment[]
   shipment        Shipment?
   reviews         Review[]
+  returnRequests  ReturnRequest[]
 
   @@map("orders")
 }
@@ -355,7 +431,7 @@ model Review {
   orderId   Int?         @map("order_id")
   rating    Int
   content   String?
-  status    ReviewStatus @default(PENDING)
+  status    ReviewStatus @default(APPROVED)
   createdAt DateTime     @default(now()) @map("created_at")
   updatedAt DateTime     @updatedAt @map("updated_at")
   user      User         @relation(fields: [userId], references: [id])
@@ -364,6 +440,24 @@ model Review {
 
   @@unique([userId, productId, orderId])
   @@map("reviews")
+}
+
+model ReturnRequest {
+  id             Int                 @id @default(autoincrement())
+  userId         Int                 @map("user_id")
+  orderId        Int                 @map("order_id")
+  type           ReturnRequestType
+  reason         String
+  status         ReturnRequestStatus @default(REQUESTED)
+  resolutionNote String?             @map("resolution_note")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+  user           User                @relation(fields: [userId], references: [id])
+  order          Order               @relation(fields: [orderId], references: [id])
+
+  @@index([userId, status])
+  @@index([orderId, status])
+  @@map("return_requests")
 }
 
 model LoyaltyProfile {
@@ -396,6 +490,7 @@ model BusinessCustomer {
   contracts     Contract[]
   invoices      Invoice[]
   debts         Debt[]
+  orders        Order[]
 
   @@map("business_customers")
 }
@@ -409,17 +504,46 @@ model QuoteRequest {
   productNeed        String             @map("product_need")
   expectedQuantityKg Int?               @map("expected_quantity_kg")
   note               String?
+  accessTokenHash    String?            @unique @map("access_token_hash")
+  subtotal           Decimal            @default(0) @db.Decimal(14, 2)
+  discountAmount     Decimal            @default(0) @map("discount_amount") @db.Decimal(14, 2)
+  totalAmount        Decimal            @default(0) @map("total_amount") @db.Decimal(14, 2)
+  validUntil         DateTime?           @map("valid_until")
+  salesNote          String?             @map("sales_note")
+  customerRespondedAt DateTime?          @map("customer_responded_at")
+  convertedAt        DateTime?           @map("converted_at")
   status             QuoteRequestStatus @default(NEW)
   createdAt          DateTime           @default(now()) @map("created_at")
   updatedAt          DateTime           @updatedAt @map("updated_at")
   businessCustomer   BusinessCustomer?  @relation(fields: [businessCustomerId], references: [id])
+  items              QuoteRequestItem[]
+  contract           Contract?
+  order              Order?
 
   @@map("quote_requests")
+}
+
+model QuoteRequestItem {
+  id             Int          @id @default(autoincrement())
+  quoteRequestId Int          @map("quote_request_id")
+  productId      Int?         @map("product_id")
+  description    String
+  quantity       Int
+  unit           String       @default("kg")
+  unitPrice      Decimal      @map("unit_price") @db.Decimal(12, 2)
+  lineTotal      Decimal      @map("line_total") @db.Decimal(14, 2)
+  quoteRequest   QuoteRequest @relation(fields: [quoteRequestId], references: [id], onDelete: Cascade)
+  product        Product?     @relation(fields: [productId], references: [id])
+
+  @@index([quoteRequestId])
+  @@index([productId])
+  @@map("quote_request_items")
 }
 
 model Contract {
   id                 Int              @id @default(autoincrement())
   businessCustomerId Int              @map("business_customer_id")
+  quoteRequestId     Int?             @unique @map("quote_request_id")
   contractCode       String           @unique @map("contract_code")
   title              String
   startDate          DateTime?        @map("start_date")
@@ -431,6 +555,7 @@ model Contract {
   createdAt          DateTime         @default(now()) @map("created_at")
   updatedAt          DateTime         @updatedAt @map("updated_at")
   businessCustomer   BusinessCustomer @relation(fields: [businessCustomerId], references: [id])
+  quoteRequest       QuoteRequest?     @relation(fields: [quoteRequestId], references: [id])
   invoices           Invoice[]
 
   @@map("contracts")

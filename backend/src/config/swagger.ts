@@ -50,6 +50,16 @@ export const swaggerSpec = swaggerJsdoc({
             password: { type: "string", example: "Admin@123" },
           },
         },
+        GoogleLoginRequest: {
+          type: "object",
+          required: ["credential"],
+          properties: {
+            credential: {
+              type: "string",
+              description: "Google ID token do Google Identity Services trả về",
+            },
+          },
+        },
         CategoryRequest: {
           type: "object",
           required: ["name"],
@@ -184,6 +194,26 @@ export const swaggerSpec = swaggerJsdoc({
           responses: {
             "200": { description: "Đăng nhập thành công" },
             "401": { description: "Email hoặc mật khẩu không đúng" },
+          },
+        },
+      },
+      "/api/auth/google": {
+        post: {
+          tags: ["Auth"],
+          summary: "Đăng nhập hoặc tạo tài khoản bằng Google",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/GoogleLoginRequest" },
+              },
+            },
+          },
+          responses: {
+            "200": { description: "Đăng nhập Google thành công và nhận JWT" },
+            "401": { description: "Google ID token không hợp lệ" },
+            "403": { description: "Tài khoản đã bị khóa" },
+            "503": { description: "Backend chưa cấu hình GOOGLE_CLIENT_ID" },
           },
         },
       },

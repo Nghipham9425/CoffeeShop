@@ -22,8 +22,17 @@ const passwordResetLimiter = rateLimit({
   message: { message: "Bạn đã thử đặt lại mật khẩu quá nhiều lần. Vui lòng thử lại sau." },
 });
 
+const authLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { message: "Bạn đã thử đăng nhập quá nhiều lần. Vui lòng thử lại sau 15 phút." },
+});
+
 authRoutes.post("/register", asyncHandler(authController.register));
 authRoutes.post("/login", asyncHandler(authController.login));
+authRoutes.post("/google", authLoginLimiter, asyncHandler(authController.googleLogin));
 authRoutes.post("/forgot-password", passwordResetRequestLimiter, asyncHandler(authController.forgotPassword));
 authRoutes.post("/reset-password", passwordResetLimiter, asyncHandler(authController.resetPassword));
 authRoutes.get("/me", authMiddleware, asyncHandler(authController.me));

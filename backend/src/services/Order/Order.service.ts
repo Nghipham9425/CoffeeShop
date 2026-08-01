@@ -6,6 +6,8 @@ import type {
   UpdateOrderStatusInput,
   UpdatePaymentStatusInput,
   UpsertShipmentInput,
+  CreateReturnRequestInput,
+  UpdateReturnRequestInput,
 } from "../../validators/Order/Order.validator.js";
 
 type OrderRecord = Awaited<ReturnType<typeof orderData.findMany>>[number];
@@ -103,6 +105,15 @@ export const orderService = {
         throw new Error("Có sản phẩm không còn bán lẻ hoặc không tồn tại");
       }
 
+      if (error instanceof Error && ["VOUCHER_NOT_FOUND", "VOUCHER_INACTIVE"].includes(error.message)) {
+        throw new Error(error.message === "VOUCHER_NOT_FOUND" ? "Mã giảm giá không tồn tại" : "Mã giảm giá đã hết hạn hoặc chưa được kích hoạt");
+      }
+
+      if (error instanceof Error && error.message.startsWith("VOUCHER_MIN_ORDER:")) {
+        const minimum = Number(error.message.split(":")[1]);
+        throw new Error(`Đơn hàng chưa đạt giá trị tối thiểu ${minimum.toLocaleString("vi-VN")} đ`);
+      }
+
       throw error;
     }
   },
@@ -110,6 +121,39 @@ export const orderService = {
   async getOrders(query: OrderQueryInput) {
     const orders = await orderData.findMany(query);
     return orders.map(mapOrder);
+  },
+
+  async cancelCustomerOrder(id: number, userId: number, reason: string) {
+    const order = await orderData.findCustomerOrder(id, userId);
+    if (!order) throw new Error("ORDER_NOT_FOUND");
+    if (order.status !== OrderStatus.PENDING) throw new Error("ORDER_NOT_CANCELLABLE");
+    if (order.payments.some((payment) => payment.status === PaymentStatus.PAID)) throw new Error("PAID_ORDER_REQUIRES_REFUND_REQUEST");
+    return mapOrder(await orderData.cancelCustomerOrder(id, userId, reason));
+  },
+
+  async createReturnRequest(id: number, userId: number, input: CreateReturnRequestInput) {
+    const order = await orderData.findCustomerOrder(id, userId);
+    if (!order) throw new Error("ORDER_NOT_FOUND");
+    if (order.status !== OrderStatus.COMPLETED) throw new Error("RETURN_REQUIRES_COMPLETED_ORDER");
+    if (await orderData.findActiveReturnRequest(id, userId)) throw new Error("RETURN_REQUEST_ALREADY_EXISTS");
+    return orderData.createReturnRequest(id, userId, input);
+  },
+
+  listReturnRequests() {
+    return orderData.listReturnRequests();
+  },
+
+  async updateReturnRequest(id: number, input: UpdateReturnRequestInput) {
+    const current = await orderData.findReturnRequest(id);
+    if (!current) throw new Error("RETURN_REQUEST_NOT_FOUND");
+    const transitions: Record<string, string[]> = {
+      REQUESTED: ["REVIEWING", "APPROVED", "REJECTED", "CANCELLED"],
+      REVIEWING: ["APPROVED", "REJECTED"],
+      APPROVED: ["COMPLETED"],
+      REJECTED: [], COMPLETED: [], CANCELLED: [],
+    };
+    if (!transitions[current.status]?.includes(input.status)) throw new Error("INVALID_RETURN_STATUS_TRANSITION");
+    return orderData.updateReturnRequest(id, input);
   },
 
   async getOrderById(id: number) {
@@ -189,7 +233,9 @@ export const orderService = {
       throw new Error("SHIPMENT_MUST_BE_DELIVERED");
     }
 
-    const updated = await orderData.updateStatus(id, input);
+    const updated = input.status === OrderStatus.CANCELLED
+      ? await orderData.cancelAdminOrder(id, input)
+      : await orderData.updateStatus(id, input);
 
     // COD is collected after successful delivery, not while the order is new.
     if (input.status === OrderStatus.COMPLETED && payment?.method === PaymentMethod.COD && payment.status === PaymentStatus.PENDING) {

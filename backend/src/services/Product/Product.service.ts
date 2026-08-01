@@ -24,6 +24,8 @@ function mapProduct(product: ProductRecord): ProductModel {
     imageUrl: product.imageUrl,
     isRetail: product.isRetail,
     isB2b: product.isB2b,
+    isActive: product.isActive,
+    stockQuantity: product.inventories.reduce((total, inventory) => total + inventory.quantity, 0),
     prices: product.prices.map((price) => ({
       id: price.id,
       priceType: price.priceType,
@@ -65,6 +67,15 @@ export const productService = {
     return product ? mapProduct(product) : null;
   },
 
+  async getAdminProducts(query: ProductQueryInput) {
+    return (await productData.findMany(query, true)).map(mapProduct);
+  },
+
+  async getProductBySlug(slug: string) {
+    const product = await productData.findBySlug(slug);
+    return product ? mapProduct(product) : null;
+  },
+
   async createProduct(input: CreateProductInput) {
     await ensureCategoryExists(input.categoryId);
     const slug = await buildUniqueSlug(input.name, input.slug);
@@ -72,8 +83,8 @@ export const productService = {
     return mapProduct(product);
   },
 
-  async updateProduct(id: number, input: UpdateProductInput) {
-    const existingProduct = await productData.findById(id);
+  async updateProduct(id: number, input: UpdateProductInput, createdById?: number) {
+    const existingProduct = await productData.findAnyById(id);
     if (!existingProduct) throw new Error("PRODUCT_NOT_FOUND");
     if (input.categoryId) await ensureCategoryExists(input.categoryId);
 
@@ -81,12 +92,12 @@ export const productService = {
       ? await buildUniqueSlug(input.name ?? existingProduct.name, input.slug, id)
       : undefined;
 
-    const product = await productData.update(id, { ...input, slug });
+    const product = await productData.update(id, { ...input, slug }, createdById);
     return mapProduct(product);
   },
 
   async deleteProduct(id: number) {
-    const existingProduct = await productData.findById(id);
+    const existingProduct = await productData.findAnyById(id);
     if (!existingProduct) throw new Error("PRODUCT_NOT_FOUND");
     await productData.softDelete(id);
   },

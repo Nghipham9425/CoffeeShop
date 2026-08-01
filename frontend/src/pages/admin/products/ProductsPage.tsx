@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { BadgeDollarSign, Edit3, PackagePlus, RotateCw, Trash2, X } from "lucide-react";
+import { Edit3, Eye, EyeOff, PackagePlus, RotateCw, X } from "lucide-react";
 import { AdminPanel } from "../../../components/admin/AdminPanel";
 import { Button } from "../../../components/ui/button";
 import { useAdminOutlet } from "../../../layouts/AdminLayout";
@@ -9,7 +9,6 @@ import {
   type Category,
   type Product,
   type ProductPayload,
-  type ProductPricePayload,
 } from "../../../lib/adminApi";
 import { AdminPageShell } from "../shared/AdminPageShell";
 import { EmptyState, ErrorState, LoadingState } from "../shared/ApiState";
@@ -27,20 +26,6 @@ const emptyProductForm: ProductPayload = {
   isB2b: true,
 };
 
-const emptyPriceForm: ProductPricePayload = {
-  priceType: "RETAIL",
-  minQuantity: 1,
-  price: 0,
-  isActive: true,
-};
-
-const priceTypeLabels: Record<ProductPricePayload["priceType"], string> = {
-  RETAIL: "Bán lẻ",
-  WHOLESALE: "Bán sỉ",
-  VIP: "VIP",
-  B2B: "B2B",
-};
-
 const inputClass = "h-11 rounded-lg border border-[#C7A792] px-3 outline-none focus:border-[#553B2F]";
 const labelClass = "grid gap-2 text-sm font-bold text-[#553B2F]";
 
@@ -49,24 +34,22 @@ export function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState<ProductPayload>(emptyProductForm);
-  const [priceForm, setPriceForm] = useState<ProductPricePayload>(emptyPriceForm);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [pricingProduct, setPricingProduct] = useState<Product | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [savingPrice, setSavingPrice] = useState(false);
   const [error, setError] = useState("");
 
   const formTitle = useMemo(() => (editingId ? "Cập nhật sản phẩm" : "Thêm sản phẩm"), [editingId]);
 
   async function loadData() {
+    if (!token) return;
     setLoading(true);
     setError("");
 
     try {
       const [productResult, categoryResult] = await Promise.all([
-        adminApi.products(),
+        adminApi.adminProducts(token),
         adminApi.categories({ includeInactive: true }),
       ]);
       setProducts(productResult);
@@ -112,16 +95,6 @@ export function ProductsPage() {
     setForm(emptyProductForm);
     setEditingId(null);
     setShowForm(false);
-  }
-
-  function startPricing(product: Product) {
-    setPricingProduct(product);
-    setPriceForm(emptyPriceForm);
-  }
-
-  function closePricing() {
-    setPricingProduct(null);
-    setPriceForm(emptyPriceForm);
   }
 
   async function handleSubmit(event: FormEvent) {
@@ -171,41 +144,19 @@ export function ProductsPage() {
     }
   }
 
-  async function handleDelete(product: Product) {
+  async function handleVisibility(product: Product) {
     if (!token) return;
-    const confirmed = window.confirm(`Ẩn sản phẩm "${product.name}"?`);
+    const action = product.isActive ? "Ẩn" : "Hiện lại";
+    const confirmed = window.confirm(`${action} sản phẩm "${product.name}"?`);
     if (!confirmed) return;
 
     setError("");
 
     try {
-      await adminApi.deleteProduct(token, product.id);
+      await adminApi.updateProduct(token, product.id, { isActive: !product.isActive });
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không ẩn được sản phẩm");
-    }
-  }
-
-  async function handleAddPrice(event: FormEvent) {
-    event.preventDefault();
-    if (!token || !pricingProduct) return;
-
-    setSavingPrice(true);
-    setError("");
-
-    try {
-      await adminApi.addProductPrice(token, pricingProduct.id, {
-        priceType: priceForm.priceType,
-        minQuantity: Number(priceForm.minQuantity),
-        price: Number(priceForm.price),
-        isActive: priceForm.isActive,
-      });
-      closePricing();
-      await loadData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Không lưu được bảng giá");
-    } finally {
-      setSavingPrice(false);
+      setError(err instanceof Error ? err.message : `Không thể ${action.toLowerCase()} sản phẩm`);
     }
   }
 
@@ -280,46 +231,9 @@ export function ProductsPage() {
         </AdminPanel>
       ) : null}
 
-      {pricingProduct ? (
-        <AdminPanel
-          title={`Bảng giá: ${pricingProduct.name}`}
-          description="Thêm hoặc cập nhật mức giá theo loại khách hàng và số lượng tối thiểu."
-          action={
-            <Button type="button" variant="outline" onClick={closePricing} className="rounded-lg border-[#C7A792] text-[#553B2F] hover:bg-[#E8D3C7]">
-              <X size={16} />
-              Đóng
-            </Button>
-          }
-        >
-          <form onSubmit={handleAddPrice} className="grid gap-4 p-5 md:grid-cols-4">
-            <label className={labelClass}>
-              Loại giá
-              <select className={inputClass} value={priceForm.priceType} onChange={(event) => setPriceForm((current) => ({ ...current, priceType: event.target.value as ProductPricePayload["priceType"] }))}>
-                {Object.entries(priceTypeLabels).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
-            </label>
-            <label className={labelClass}>
-              Số lượng tối thiểu
-              <input type="number" min={1} className={inputClass} value={priceForm.minQuantity} onChange={(event) => setPriceForm((current) => ({ ...current, minQuantity: Number(event.target.value) }))} />
-            </label>
-            <label className={labelClass}>
-              Giá
-              <input type="number" min={0} className={inputClass} value={priceForm.price} onChange={(event) => setPriceForm((current) => ({ ...current, price: Number(event.target.value) }))} />
-            </label>
-            <div className="flex items-end">
-              <Button disabled={savingPrice} className="w-full rounded-lg bg-[#553B2F] text-white hover:bg-[#3f2a21]">
-                {savingPrice ? "Đang lưu..." : "Lưu giá"}
-              </Button>
-            </div>
-          </form>
-        </AdminPanel>
-      ) : null}
-
       <AdminPanel
         title="Sản phẩm"
-        description="Danh sách sản phẩm hiện có, có thể thêm mới, cập nhật, ẩn và quản lý bảng giá."
+        description="Hiển thị cả sản phẩm đang bán và sản phẩm đã ẩn để có thể khôi phục khi cần."
         action={
           <div className="flex flex-wrap gap-2">
             <Button type="button" variant="outline" onClick={loadData} className="rounded-lg border-[#C7A792] text-[#553B2F] hover:bg-[#E8D3C7]">
@@ -345,13 +259,13 @@ export function ProductsPage() {
                   <th className="px-5 py-4">Giá lẻ</th>
                   <th className="px-5 py-4">MOQ</th>
                   <th className="px-5 py-4">Kênh bán</th>
-                  <th className="px-5 py-4">Bảng giá</th>
+                  <th className="px-5 py-4">Trạng thái</th>
                   <th className="px-5 py-4 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E8D3C7]">
                 {products.map((product) => (
-                  <tr key={product.id} className="text-[#553B2F]">
+                  <tr key={product.id} className={`text-[#553B2F] ${product.isActive ? "" : "bg-stone-50 opacity-70"}`}>
                     <td className="px-5 py-4 font-black">{product.name}</td>
                     <td className="px-5 py-4 font-semibold text-[#7a5547]">{product.categoryName}</td>
                     <td className="px-5 py-4 font-bold">{formatCurrency(product.price)}</td>
@@ -359,20 +273,16 @@ export function ProductsPage() {
                     <td className="px-5 py-4 font-semibold">
                       {[product.isRetail ? "B2C" : "", product.isB2b ? "B2B" : ""].filter(Boolean).join(" / ")}
                     </td>
-                    <td className="px-5 py-4 font-semibold">{product.prices.length} mức</td>
+                    <td className="px-5 py-4 font-semibold">{product.isActive ? "Đang hiển thị" : "Đã ẩn"}</td>
                     <td className="px-5 py-4">
                       <div className="flex justify-end gap-2">
-                        <Button type="button" variant="outline" onClick={() => startPricing(product)} className="h-9 rounded-lg border-[#C7A792] px-3 text-[#553B2F] hover:bg-[#E8D3C7]">
-                          <BadgeDollarSign size={15} />
-                          Giá
-                        </Button>
                         <Button type="button" variant="outline" onClick={() => startEdit(product)} className="h-9 rounded-lg border-[#C7A792] px-3 text-[#553B2F] hover:bg-[#E8D3C7]">
                           <Edit3 size={15} />
                           Sửa
                         </Button>
-                        <Button type="button" variant="outline" onClick={() => handleDelete(product)} className="h-9 rounded-lg border-red-200 px-3 text-red-700 hover:bg-red-50">
-                          <Trash2 size={15} />
-                          Ẩn
+                        <Button type="button" variant="outline" onClick={() => handleVisibility(product)} className={`h-9 rounded-lg px-3 ${product.isActive ? "border-red-200 text-red-700 hover:bg-red-50" : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"}`}>
+                          {product.isActive ? <EyeOff size={15} /> : <Eye size={15} />}
+                          {product.isActive ? "Ẩn" : "Hiện lại"}
                         </Button>
                       </div>
                     </td>

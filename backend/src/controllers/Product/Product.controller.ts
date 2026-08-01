@@ -14,8 +14,24 @@ export const productController = {
     res.json(products);
   },
 
+  async getAdminProducts(req: Request, res: Response) {
+    res.json(await productService.getAdminProducts(productQuerySchema.parse(req.query)));
+  },
+
   async getProductById(req: Request, res: Response) {
     const product = await productService.getProductById(Number(req.params.id));
+
+    if (!product) {
+      res.status(404).json({ message: "Không tìm thấy sản phẩm" });
+      return;
+    }
+
+    res.json(product);
+  },
+
+  async getProductBySlug(req: Request, res: Response) {
+    const slug = Array.isArray(req.params.slug) ? req.params.slug[0] : req.params.slug;
+    const product = await productService.getProductBySlug(slug);
 
     if (!product) {
       res.status(404).json({ message: "Không tìm thấy sản phẩm" });
@@ -46,7 +62,7 @@ export const productController = {
     const payload = updateProductSchema.parse(req.body);
 
     try {
-      const product = await productService.updateProduct(productId, payload);
+      const product = await productService.updateProduct(productId, payload, req.user?.userId);
       res.json(product);
     } catch (error) {
       if (error instanceof Error && error.message === "PRODUCT_NOT_FOUND") {

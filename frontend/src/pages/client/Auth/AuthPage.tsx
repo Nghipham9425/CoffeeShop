@@ -1,8 +1,8 @@
 import { ArrowRightToLine, Building2, Coffee, Eye, EyeOff, LockKeyhole, Mail, Phone, UserRound } from "lucide-react";
 import { useState, type FormEvent, type InputHTMLAttributes, type ReactNode } from "react";
-import { FaFacebookF, FaGoogle } from "react-icons/fa";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { Button } from "../../../components/ui/button";
+import { GoogleSignInButton } from "../../../components/auth/GoogleSignInButton";
 import { adminApi, adminAuth, type AdminUser } from "../../../lib/adminApi";
 
 type AuthPageProps = {
@@ -67,9 +67,26 @@ export function AuthPage({ mode, adminOnly = false, redirectTo = "/admin" }: Aut
     }
   }
 
-  function handleSocialLogin(provider: "Google" | "Facebook") {
+  async function handleGoogleLogin(credential: string) {
+    setLoading(true);
     setError("");
-    setMessage(`Đăng nhập bằng ${provider} đã có giao diện. Cần cấu hình OAuth ở backend trước khi sử dụng.`);
+    setMessage("");
+
+    try {
+      const result = await adminApi.googleLogin(credential);
+      adminAuth.setSession(result.token, result.user);
+      navigate(resolveRedirect(result.user, redirectTo), { replace: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không thể đăng nhập bằng Google.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleGoogleError(errorMessage: string) {
+    setError("");
+    setMessage("");
+    setError(errorMessage);
   }
 
   return (
@@ -156,13 +173,8 @@ export function AuthPage({ mode, adminOnly = false, redirectTo = "/admin" }: Aut
           <span className="h-px flex-1 bg-[#e3e7e9]" />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Button type="button" variant="outline" onClick={() => handleSocialLogin("Google")} className="h-12 rounded-xl border-[#e4e7ea] bg-white text-[#33363a] shadow-sm hover:bg-[#f7f8f9]">
-            <FaGoogle className="text-[#ea4335]" size={19} /> Google
-          </Button>
-          <Button type="button" variant="outline" onClick={() => handleSocialLogin("Facebook")} className="h-12 rounded-xl border-[#e4e7ea] bg-white text-[#33363a] shadow-sm hover:bg-[#f7f8f9]">
-            <FaFacebookF className="text-[#1877f2]" size={19} /> Facebook
-          </Button>
+        <div className="mx-auto w-full max-w-sm">
+          <GoogleSignInButton disabled={loading} onCredential={handleGoogleLogin} onError={handleGoogleError} />
         </div>
 
         <p className="mt-7 text-center text-sm font-semibold text-[#6d7077]">

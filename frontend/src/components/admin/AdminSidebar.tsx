@@ -24,7 +24,7 @@ export function AdminSidebar({
         </div>
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-hidden px-4 py-5">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {adminNavItems.map((item) => (
           <NavLink
             key={item.to}
@@ -32,7 +32,7 @@ export function AdminSidebar({
             end={item.end}
             className={({ isActive }) =>
               cn(
-                "flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-bold text-[#E8D3C7] transition hover:bg-[#AA7864] hover:text-white",
+                "flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-bold text-[#E8D3C7] transition hover:bg-[#AA7864] hover:text-white",
                 isActive && "bg-[#E8D3C7] text-[#553B2F] shadow-sm hover:bg-[#E8D3C7] hover:text-[#553B2F]",
               )
             }

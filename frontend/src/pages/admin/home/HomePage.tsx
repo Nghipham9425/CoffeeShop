@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { FileText, Inbox, Package, Tags } from "lucide-react";
+import { CircleCheckBig, FileText, Package, Tags } from "lucide-react";
 import { AdminMetricCard } from "../../../components/admin/AdminMetricCard";
 import { AdminPanel } from "../../../components/admin/AdminPanel";
 import { AdminStatusBadge } from "../../../components/admin/AdminStatusBadge";
@@ -9,7 +9,6 @@ import {
   formatCurrency,
   formatDate,
   type Category,
-  type ContactMessage,
   type Product,
   type QuoteRequest,
 } from "../../../lib/adminApi";
@@ -21,7 +20,6 @@ export function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [quotes, setQuotes] = useState<QuoteRequest[]>([]);
-  const [contacts, setContacts] = useState<ContactMessage[]>([]);
   const [loadingPublic, setLoadingPublic] = useState(true);
   const [error, setError] = useState("");
   const [protectedError, setProtectedError] = useState("");
@@ -64,14 +62,10 @@ export function HomePage() {
       setProtectedError("");
 
       try {
-        const [quoteResult, contactResult] = await Promise.all([
-          adminApi.quoteRequests(token),
-          adminApi.contactMessages(token),
-        ]);
+        const quoteResult = await adminApi.quoteRequests(token);
 
         if (!alive) return;
         setQuotes(quoteResult);
-        setContacts(contactResult);
       } catch (err) {
         if (alive) setProtectedError(err instanceof Error ? err.message : "Không tải được dữ liệu quản trị");
       }
@@ -87,12 +81,15 @@ export function HomePage() {
     () => quotes.filter((quote) => quote.status === "NEW" || quote.status === "CONTACTED").length,
     [quotes],
   );
-  const unreadContacts = useMemo(() => contacts.filter((contact) => !contact.isRead).length, [contacts]);
+  const convertedQuotes = useMemo(
+    () => quotes.filter((quote) => quote.status === "ACCEPTED" || quote.status === "CONVERTED").length,
+    [quotes],
+  );
 
   return (
     <AdminPageShell
       title="Tổng quan quản trị"
-      description="Theo dõi nhanh sản phẩm, danh mục, yêu cầu báo giá B2B và tin nhắn liên hệ đang có trong hệ thống."
+      description="Theo dõi nhanh sản phẩm, danh mục và tiến độ xử lý yêu cầu báo giá B2B trong hệ thống."
     >
       {error ? <ErrorState message={error} /> : null}
       {protectedError ? <ErrorState message={protectedError} /> : null}
@@ -101,7 +98,7 @@ export function HomePage() {
         <AdminMetricCard label="Sản phẩm" value={String(products.length)} helper="Danh mục hàng" icon={Package} />
         <AdminMetricCard label="Danh mục" value={String(categories.length)} helper="Đang bán" icon={Tags} />
         <AdminMetricCard label="Báo giá cần xử lý" value={String(activeQuotes)} helper="B2B" icon={FileText} />
-        <AdminMetricCard label="Tin nhắn chưa đọc" value={String(unreadContacts)} helper="CSKH" icon={Inbox} />
+        <AdminMetricCard label="Báo giá đã chốt" value={String(convertedQuotes)} helper="B2B" icon={CircleCheckBig} />
       </div>
 
       <div className="grid gap-5 xl:grid-cols-2">

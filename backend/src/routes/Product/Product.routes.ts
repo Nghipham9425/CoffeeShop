@@ -7,6 +7,13 @@ import { authMiddleware, authorizeRoles } from "../../middleware/authMiddleware.
 export const productRoutes = Router();
 
 productRoutes.get("/", asyncHandler(productController.getProducts));
+productRoutes.get(
+  "/admin/list",
+  authMiddleware,
+  authorizeRoles(UserRole.ADMIN, UserRole.SALES, UserRole.WAREHOUSE),
+  asyncHandler(productController.getAdminProducts),
+);
+productRoutes.get("/slug/:slug", asyncHandler(productController.getProductBySlug));
 productRoutes.get("/:id", asyncHandler(productController.getProductById));
 productRoutes.post(
   "/",

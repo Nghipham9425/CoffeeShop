@@ -28,6 +28,7 @@ export function QuotePage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [trackingUrl, setTrackingUrl] = useState("");
 
   function updateField(field: keyof QuoteForm, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -37,6 +38,7 @@ export function QuotePage() {
     event.preventDefault();
     setError("");
     setSuccess("");
+    setTrackingUrl("");
     if (!form.companyName.trim() || !form.contactName.trim() || !form.phoneOrEmail.trim() || !form.productNeed.trim()) {
       setError("Vui lòng điền đầy đủ các thông tin bắt buộc.");
       return;
@@ -58,6 +60,7 @@ export function QuotePage() {
       });
       setForm(initialForm);
       setSuccess(`Đã gửi yêu cầu báo giá #${quote.id}. Bộ phận sales sẽ liên hệ sớm nhất.`);
+      setTrackingUrl(`/bao-gia/${quote.id}?token=${encodeURIComponent(quote.accessToken)}`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Không thể gửi yêu cầu báo giá.");
     } finally {
@@ -79,7 +82,7 @@ export function QuotePage() {
           <Input label="Số lượng dự kiến (kg)" value={form.expectedQuantityKg} onChange={(value) => updateField("expectedQuantityKg", value)} placeholder="Ví dụ: 500" type="number" />
           <label className="grid gap-2 text-sm font-bold text-stone-700"><span>Ghi chú</span><textarea className="min-h-36 rounded-xl border border-stone-200 px-4 py-3 outline-none focus:border-[var(--leaf)] focus:ring-2 focus:ring-[var(--leaf)]" value={form.note} onChange={(event) => updateField("note", event.target.value)} placeholder="Nhu cầu OEM, lịch giao, khu vực giao hàng, quy cách bao bì hoặc câu hỏi cần tư vấn..." /></label>
           {error ? <p className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</p> : null}
-          {success ? <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{success}</p> : null}
+          {success ? <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700"><p>{success}</p>{trackingUrl ? <Button asChild variant="outline" className="mt-3"><a href={trackingUrl}>Theo dõi và phản hồi báo giá</a></Button> : null}</div> : null}
           <Button size="lg" disabled={submitting} type="submit"><Send size={18} />{submitting ? "Đang gửi..." : "Gửi yêu cầu báo giá"}</Button>
         </form>
       </CardContent></Card>

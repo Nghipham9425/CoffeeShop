@@ -27,6 +27,7 @@ export const env = {
   smtpPass: process.env.SMTP_PASS?.trim(),
   mailFrom: process.env.MAIL_FROM?.trim(),
   resetPasswordExpiresMinutes: Number(process.env.RESET_PASSWORD_EXPIRES_MINUTES ?? 30),
+  googleClientId: process.env.GOOGLE_CLIENT_ID?.trim(),
   geminiApiKey: process.env.GEMINI_API_KEY?.trim() ?? "",
 };
 

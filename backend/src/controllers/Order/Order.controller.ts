@@ -6,6 +6,9 @@ import {
   updateOrderStatusSchema,
   updatePaymentStatusSchema,
   upsertShipmentSchema,
+  cancelCustomerOrderSchema,
+  createReturnRequestSchema,
+  updateReturnRequestSchema,
 } from "../../validators/Order/Order.validator.js";
 
 export const orderController = {
@@ -28,6 +31,51 @@ export const orderController = {
   async getOrders(req: Request, res: Response) {
     const query = orderQuerySchema.parse(req.query);
     res.json(await orderService.getOrders(query));
+  },
+
+  async cancelCustomerOrder(req: Request, res: Response) {
+    const input = cancelCustomerOrderSchema.parse(req.body);
+    try { res.json(await orderService.cancelCustomerOrder(Number(req.params.id), req.user!.userId, input.reason)); }
+    catch (error) {
+      if (error instanceof Error) {
+        const messages: Record<string, string> = {
+          ORDER_NOT_FOUND: "Không tìm thấy đơn hàng của bạn.",
+          ORDER_NOT_CANCELLABLE: "Chỉ có thể tự hủy đơn đang chờ xác nhận.",
+          PAID_ORDER_REQUIRES_REFUND_REQUEST: "Đơn đã thanh toán cần gửi yêu cầu hoàn tiền.",
+        };
+        if (messages[error.message]) { res.status(400).json({ message: messages[error.message] }); return; }
+      }
+      throw error;
+    }
+  },
+
+  async createReturnRequest(req: Request, res: Response) {
+    const input = createReturnRequestSchema.parse(req.body);
+    try { res.status(201).json(await orderService.createReturnRequest(Number(req.params.id), req.user!.userId, input)); }
+    catch (error) {
+      if (error instanceof Error) {
+        const messages: Record<string, string> = {
+          ORDER_NOT_FOUND: "Không tìm thấy đơn hàng của bạn.",
+          RETURN_REQUIRES_COMPLETED_ORDER: "Chỉ gửi yêu cầu đổi/trả cho đơn đã hoàn tất.",
+          RETURN_REQUEST_ALREADY_EXISTS: "Đơn hàng đang có một yêu cầu được xử lý.",
+        };
+        if (messages[error.message]) { res.status(400).json({ message: messages[error.message] }); return; }
+      }
+      throw error;
+    }
+  },
+
+  async getReturnRequests(_req: Request, res: Response) {
+    res.json(await orderService.listReturnRequests());
+  },
+
+  async updateReturnRequest(req: Request, res: Response) {
+    try { res.json(await orderService.updateReturnRequest(Number(req.params.id), updateReturnRequestSchema.parse(req.body))); }
+    catch (error) {
+      if (error instanceof Error && error.message === "RETURN_REQUEST_NOT_FOUND") { res.status(404).json({ message: "Không tìm thấy yêu cầu." }); return; }
+      if (error instanceof Error && error.message === "INVALID_RETURN_STATUS_TRANSITION") { res.status(409).json({ message: "Không thể chuyển yêu cầu sang trạng thái này." }); return; }
+      throw error;
+    }
   },
 
   async getPublicPaymentStatus(req: Request, res: Response) {

@@ -1,4 +1,4 @@
-import { KeyRound, MapPin, Package, UserRound, type LucideIcon } from "lucide-react";
+import { MapPin, Package, UserRound, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link, Navigate, NavLink } from "react-router-dom";
 import { adminAuth } from "../../../lib/adminApi";
@@ -7,7 +7,6 @@ const navigation: Array<[string, string, LucideIcon]> = [
   ["Thông tin cá nhân", "/tai-khoan/thong-tin", UserRound],
   ["Lịch sử đơn hàng", "/tai-khoan/don-hang", Package],
   ["Sổ địa chỉ", "/tai-khoan/dia-chi", MapPin],
-  ["Đổi mật khẩu", "/tai-khoan/doi-mat-khau", KeyRound],
 ];
 
 export function AccountPageShell({ title, description, children }: { title: string; description: string; children: ReactNode }) {

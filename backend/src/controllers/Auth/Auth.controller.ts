@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { authService } from "../../services/Auth/Auth.service.js";
-import { addressSchema, changePasswordSchema, forgotPasswordSchema, loginSchema, registerSchema, resetPasswordSchema, updateAddressSchema, updateProfileSchema } from "../../validators/Auth/Auth.validator.js";
+import { addressSchema, changePasswordSchema, forgotPasswordSchema, googleLoginSchema, loginSchema, registerSchema, resetPasswordSchema, updateAddressSchema, updateProfileSchema } from "../../validators/Auth/Auth.validator.js";
 
 export const authController = {
   async register(req: Request, res: Response) {
@@ -31,6 +31,28 @@ export const authController = {
         return;
       }
 
+      throw error;
+    }
+  },
+
+  async googleLogin(req: Request, res: Response) {
+    const payload = googleLoginSchema.parse(req.body);
+
+    try {
+      res.json(await authService.loginWithGoogle(payload));
+    } catch (error) {
+      if (error instanceof Error && error.message === "GOOGLE_AUTH_NOT_CONFIGURED") {
+        res.status(503).json({ message: "Đăng nhập Google chưa được cấu hình trên máy chủ." });
+        return;
+      }
+      if (error instanceof Error && error.message === "ACCOUNT_DISABLED") {
+        res.status(403).json({ message: "Tài khoản đã bị khóa." });
+        return;
+      }
+      if (error instanceof Error && error.message === "INVALID_GOOGLE_CREDENTIAL") {
+        res.status(401).json({ message: "Thông tin đăng nhập Google không hợp lệ hoặc đã hết hạn." });
+        return;
+      }
       throw error;
     }
   },

@@ -29,9 +29,24 @@ export type CustomerOrderHistory = {
   status: "PENDING" | "CONFIRMED" | "PACKING" | "SHIPPING" | "COMPLETED" | "CANCELLED";
   totalAmount: number;
   createdAt: string;
-  items: Array<{ id: number; productName: string; unit: string; quantity: number }>;
+  items: Array<{
+    id: number;
+    productId: number;
+    productName: string;
+    unit: string;
+    quantity: number;
+    review: { id: number; rating: number; status: "PENDING" | "APPROVED" | "REJECTED" } | null;
+  }>;
   payment: { method: string; status: string; paidAt: string | null } | null;
   shipment: { status: string; carrier: string | null; trackingCode: string | null } | null;
+  returnRequest: {
+    id: number;
+    type: "RETURN" | "EXCHANGE" | "REFUND";
+    reason: string;
+    status: "REQUESTED" | "REVIEWING" | "APPROVED" | "REJECTED" | "COMPLETED" | "CANCELLED";
+    resolutionNote: string | null;
+    createdAt: string;
+  } | null;
 };
 
 async function request<T>(path: string, options: RequestInit = {}) {
@@ -58,4 +73,18 @@ export const profileApi = {
   updateAddress: (id: number, payload: Partial<AddressPayload>) => request<ProfileAddress>(`/auth/me/addresses/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
   deleteAddress: (id: number) => request<void>(`/auth/me/addresses/${id}`, { method: "DELETE" }),
   orderHistory: () => request<CustomerOrderHistory[]>("/auth/me/orders"),
+  createReview: (payload: { orderId: number; productId: number; rating: number; content?: string }) =>
+    request<{ id: number; rating: number; status: "PENDING" | "APPROVED" | "REJECTED" }>("/reviews", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  cancelOrder: (orderId: number, reason: string) => request<CustomerOrderHistory>(`/orders/${orderId}/cancel`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  }),
+  createReturnRequest: (orderId: number, payload: { type: "RETURN" | "EXCHANGE" | "REFUND"; reason: string }) =>
+    request<NonNullable<CustomerOrderHistory["returnRequest"]>>(`/orders/${orderId}/return-requests`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
 };

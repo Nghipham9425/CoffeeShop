@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Edit3, FolderPlus, RotateCw, Trash2, X } from "lucide-react";
+import { Edit3, Eye, EyeOff, FolderPlus, RotateCw, X } from "lucide-react";
 import { AdminPanel } from "../../../components/admin/AdminPanel";
 import { Button } from "../../../components/ui/button";
 import { useAdminOutlet } from "../../../layouts/AdminLayout";
@@ -97,18 +97,19 @@ export function CategoriesPage() {
     }
   }
 
-  async function handleDelete(category: Category) {
+  async function handleVisibility(category: Category) {
     if (!token) return;
-    const confirmed = window.confirm(`Ẩn danh mục "${category.name}"?`);
+    const action = category.isActive ? "Ẩn" : "Hiện lại";
+    const confirmed = window.confirm(`${action} danh mục "${category.name}"?`);
     if (!confirmed) return;
 
     setError("");
 
     try {
-      await adminApi.deleteCategory(token, category.id);
+      await adminApi.updateCategory(token, category.id, { isActive: !category.isActive });
       await loadCategories();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không xóa được danh mục");
+      setError(err instanceof Error ? err.message : `Không thể ${action.toLowerCase()} danh mục`);
     }
   }
 
@@ -204,7 +205,7 @@ export function CategoriesPage() {
               </thead>
               <tbody className="divide-y divide-[#E8D3C7]">
                 {categories.map((category) => (
-                  <tr key={category.id} className="text-[#553B2F]">
+                  <tr key={category.id} className={`text-[#553B2F] ${category.isActive ? "" : "bg-stone-50 opacity-70"}`}>
                     <td className="px-5 py-4 font-black">{category.name}</td>
                     <td className="px-5 py-4 font-semibold text-[#7a5547]">{category.slug}</td>
                     <td className="px-5 py-4 font-semibold text-[#7a5547]">{category.description ?? "Chưa có mô tả"}</td>
@@ -216,9 +217,9 @@ export function CategoriesPage() {
                           <Edit3 size={15} />
                           Sửa
                         </Button>
-                        <Button type="button" variant="outline" onClick={() => handleDelete(category)} className="h-9 rounded-lg border-red-200 px-3 text-red-700 hover:bg-red-50">
-                          <Trash2 size={15} />
-                          Ẩn
+                        <Button type="button" variant="outline" onClick={() => handleVisibility(category)} className={`h-9 rounded-lg px-3 ${category.isActive ? "border-red-200 text-red-700 hover:bg-red-50" : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"}`}>
+                          {category.isActive ? <EyeOff size={15} /> : <Eye size={15} />}
+                          {category.isActive ? "Ẩn" : "Hiện lại"}
                         </Button>
                       </div>
                     </td>

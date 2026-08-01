@@ -1,3 +1,4 @@
+import { CheckCircle2, X } from "lucide-react";
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { PublicProduct } from "../lib/publicApi";
 
@@ -10,6 +11,7 @@ export type CartItem = {
   unit: string;
   quantity: number;
   minimumOrderKg: number;
+  stockQuantity: number;
 };
 
 type CartContextValue = {
@@ -18,6 +20,7 @@ type CartContextValue = {
   subtotal: number;
   addItem: (product: PublicProduct, quantity?: number) => void;
   updateQuantity: (productId: number, quantity: number) => void;
+  syncStock: (products: PublicProduct[]) => void;
   removeItem: (productId: number) => void;
   clearCart: () => void;
 };
@@ -37,10 +40,17 @@ function readStoredCart() {
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>(readStoredCart);
+  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
   }, [items]);
+
+  useEffect(() => {
+    if (!notice) return;
+    const timeout = window.setTimeout(() => setNotice(""), 2800);
+    return () => window.clearTimeout(timeout);
+  }, [notice]);
 
   const value = useMemo<CartContextValue>(() => {
     const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -53,6 +63,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       addItem(product, quantity = 1) {
         const price = product.price;
         if (!price) return;
+        if (product.stockQuantity <= 0) {
+          setNotice(`${product.name} hiện đã hết hàng.`);
+          return;
+        }
 
         setItems((current) => {
           const existing = current.find((item) => item.productId === product.id);
@@ -60,7 +74,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
           if (existing) {
             return current.map((item) =>
               item.productId === product.id
-                ? { ...item, quantity: item.quantity + quantity }
+                ? {
+                    ...item,
+                    stockQuantity: product.stockQuantity,
+                    quantity: Math.min(product.stockQuantity, item.quantity + quantity),
+                  }
                 : item,
             );
           }
@@ -72,18 +90,34 @@ export function CartProvider({ children }: { children: ReactNode }) {
               name: product.name,
               price,
               unit: product.unit,
-              quantity,
+              quantity: Math.min(product.stockQuantity, quantity),
               minimumOrderKg: product.minimumOrderKg,
+              stockQuantity: product.stockQuantity,
             },
           ];
         });
+        setNotice(`Đã thêm ${product.name} vào giỏ hàng.`);
       },
       updateQuantity(productId, quantity) {
         setItems((current) =>
           current
-            .map((item) => (item.productId === productId ? { ...item, quantity: Math.max(1, quantity) } : item))
+            .map((item) => item.productId === productId
+              ? { ...item, quantity: Math.min(item.stockQuantity ?? quantity, Math.max(1, quantity)) }
+              : item)
             .filter((item) => item.quantity > 0),
         );
+      },
+      syncStock(products) {
+        const productById = new Map(products.map((product) => [product.id, product]));
+        setItems((current) => current.map((item) => {
+          const product = productById.get(item.productId);
+          if (!product) return { ...item, stockQuantity: 0 };
+          return {
+            ...item,
+            stockQuantity: product.stockQuantity,
+            quantity: product.stockQuantity > 0 ? Math.min(item.quantity, product.stockQuantity) : item.quantity,
+          };
+        }));
       },
       removeItem(productId) {
         setItems((current) => current.filter((item) => item.productId !== productId));
@@ -94,7 +128,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
     };
   }, [items]);
 
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+  return (
+    <CartContext.Provider value={value}>
+      {children}
+      <div
+        aria-live="polite"
+        className={`fixed bottom-6 left-1/2 z-[80] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 transition-all duration-200 ${notice ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"}`}
+      >
+        <div className="flex items-center gap-3 rounded-lg border border-emerald-200 bg-white px-4 py-3 text-sm font-bold text-stone-800 shadow-xl">
+          <CheckCircle2 className="shrink-0 text-emerald-700" size={21} />
+          <span className="min-w-0 flex-1">{notice}</span>
+          <button type="button" onClick={() => setNotice("")} className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-stone-500 hover:bg-stone-100" aria-label="Đóng thông báo">
+            <X size={17} />
+          </button>
+        </div>
+      </div>
+    </CartContext.Provider>
+  );
 }
 
 export function useCart() {

@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import { ChatbotService } from '../../services/Chatbot/Chatbot.service.js';
 import { chatbotData } from '../../data/Chatbot/Chatbot.data.js';
-import { prisma } from '../../data/prisma.js';
+import { authService } from '../../services/Auth/Auth.service.js';
+import type { UserRole } from '@prisma/client';
 
 export const startConversation = async (req: Request, res: Response) => {
   const { guestName, guestPhone, topic } = req.body;
@@ -27,10 +28,9 @@ export const sendMessage = async (req: Request, res: Response) => {
     return;
   }
 
-  let role: 'ADMIN' | 'CUSTOMER' = 'CUSTOMER';
+  let role: UserRole = 'CUSTOMER';
   let userName = 'Khách hàng';
 
-  // 1. LẤY CHÍNH XÁC QUYỀN TỪ CHỦ NHÂN ĐOẠN CHAT TRONG DATABASE
   const conversation = await chatbotData.getConversationById(Number(conversationId));
   
   if (!conversation) {
@@ -38,28 +38,18 @@ export const sendMessage = async (req: Request, res: Response) => {
     return;
   }
 
-  if (conversation.userId) {
-    // Nếu đoạn chat này có chủ nhân, quét Database để kiểm tra role
-    const user = await prisma.user.findUnique({ 
-      where: { id: conversation.userId } 
-    });
-    
-    if (user) {
-      const u = user as any;
-      const userRole = String(u.role || '').toUpperCase();
-      
-      if (userRole === 'ADMIN' || userRole === 'STAFF' || userRole === 'MANAGER' || u.isAdmin === true) {
-        role = 'ADMIN';
-      }
-      userName = u.name || u.fullName || u.email || 'bạn';
-    }
-  } else {
-    // Fallback: Nếu không có chủ (guest), kiểm tra qua Token
-    const userPayload = req.user as any;
-    const payloadRole = userPayload?.role || userPayload?.roleId;
-    if (payloadRole && String(payloadRole).toUpperCase() === 'ADMIN') {
-      role = 'ADMIN';
-    }
+  if (conversation.userId && conversation.userId !== req.user?.userId) {
+    res.status(403).json({ message: 'Bạn không có quyền sử dụng cuộc trò chuyện này' });
+    return;
+  }
+
+  // Dùng cùng dữ liệu với GET /api/auth/me để role luôn phản ánh tài khoản hiện tại.
+  if (req.user) {
+    const profile = await authService.profile(req.user.userId);
+    role = profile.role;
+    userName = profile.fullName;
+  } else if (conversation.guestName) {
+    userName = conversation.guestName;
   }
 
   try {

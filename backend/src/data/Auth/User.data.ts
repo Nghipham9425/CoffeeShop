@@ -23,6 +23,58 @@ export const userData = {
     });
   },
 
+  async findOrCreateGoogleUser(input: {
+    providerUserId: string;
+    email: string;
+    fullName: string;
+    passwordHash: string;
+  }) {
+    return prisma.$transaction(async (transaction) => {
+      const linkedAccount = await transaction.oAuthAccount.findUnique({
+        where: {
+          provider_providerUserId: {
+            provider: "GOOGLE",
+            providerUserId: input.providerUserId,
+          },
+        },
+        select: {
+          user: {
+            select: { id: true, fullName: true, email: true, phone: true, role: true, isActive: true },
+          },
+        },
+      });
+
+      if (linkedAccount) return linkedAccount.user;
+
+      let user = await transaction.user.findFirst({
+        where: { email: { equals: input.email, mode: "insensitive" } },
+        select: { id: true, fullName: true, email: true, phone: true, role: true, isActive: true },
+      });
+
+      if (!user) {
+        user = await transaction.user.create({
+          data: {
+            fullName: input.fullName,
+            email: input.email.toLowerCase(),
+            passwordHash: input.passwordHash,
+          },
+          select: { id: true, fullName: true, email: true, phone: true, role: true, isActive: true },
+        });
+      }
+
+      await transaction.oAuthAccount.create({
+        data: {
+          userId: user.id,
+          provider: "GOOGLE",
+          providerUserId: input.providerUserId,
+          providerEmail: input.email.toLowerCase(),
+        },
+      });
+
+      return user;
+    });
+  },
+
   findById(id: number) {
     return prisma.user.findUnique({
       where: { id },
@@ -64,9 +116,16 @@ export const userData = {
         items: {
           select: {
             id: true,
+            productId: true,
             quantity: true,
             product: { select: { name: true, unit: true } },
           },
+        },
+        reviews: { select: { id: true, productId: true, rating: true, status: true } },
+        returnRequests: {
+          select: { id: true, type: true, reason: true, status: true, resolutionNote: true, createdAt: true },
+          orderBy: { createdAt: "desc" },
+          take: 1,
         },
         payments: { select: { method: true, status: true, paidAt: true }, orderBy: { id: "asc" }, take: 1 },
         shipment: { select: { status: true, carrier: true, trackingCode: true } },

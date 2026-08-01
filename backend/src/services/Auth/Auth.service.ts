@@ -1,10 +1,11 @@
 import bcrypt from "bcryptjs";
 import { createHash, randomBytes } from "node:crypto";
 import jwt, { type SignOptions } from "jsonwebtoken";
+import { OAuth2Client } from "google-auth-library";
 import { env } from "../../config/env.js";
 import { userData } from "../../data/Auth/User.data.js";
 import { mailService } from "../Mail/Mail.service.js";
-import type { ForgotPasswordInput, LoginInput, RegisterInput, ResetPasswordInput } from "../../validators/Auth/Auth.validator.js";
+import type { ForgotPasswordInput, GoogleLoginInput, LoginInput, RegisterInput, ResetPasswordInput } from "../../validators/Auth/Auth.validator.js";
 import type { AddressInput, ChangePasswordInput, UpdateAddressInput, UpdateProfileInput } from "../../validators/Auth/Auth.validator.js";
 
 function signToken(payload: { userId: number; role: string }) {
@@ -60,6 +61,41 @@ export const authService = {
         isActive: user.isActive,
       },
       token,
+    };
+  },
+
+  async loginWithGoogle(input: GoogleLoginInput) {
+    if (!env.googleClientId) throw new Error("GOOGLE_AUTH_NOT_CONFIGURED");
+
+    let payload;
+    try {
+      const client = new OAuth2Client(env.googleClientId);
+      const ticket = await client.verifyIdToken({
+        idToken: input.credential,
+        audience: env.googleClientId,
+      });
+      payload = ticket.getPayload();
+    } catch {
+      throw new Error("INVALID_GOOGLE_CREDENTIAL");
+    }
+
+    if (!payload?.sub || !payload.email || !payload.email_verified) {
+      throw new Error("INVALID_GOOGLE_CREDENTIAL");
+    }
+
+    const randomPasswordHash = await bcrypt.hash(randomBytes(32).toString("hex"), 10);
+    const user = await userData.findOrCreateGoogleUser({
+      providerUserId: payload.sub,
+      email: payload.email,
+      fullName: payload.name?.trim() || payload.email.split("@")[0],
+      passwordHash: randomPasswordHash,
+    });
+
+    if (!user.isActive) throw new Error("ACCOUNT_DISABLED");
+
+    return {
+      user,
+      token: signToken({ userId: user.id, role: user.role }),
     };
   },
 
@@ -141,14 +177,17 @@ export const authService = {
       createdAt: order.createdAt,
       items: order.items.map((item) => ({
         id: item.id,
+        productId: item.productId,
         productName: item.product.name,
         unit: item.product.unit,
         quantity: item.quantity,
+        review: order.reviews.find((review) => review.productId === item.productId) ?? null,
       })),
       payment: order.payments[0]
         ? { method: order.payments[0].method, status: order.payments[0].status, paidAt: order.payments[0].paidAt }
         : null,
       shipment: order.shipment,
+      returnRequest: order.returnRequests[0] ?? null,
     }));
   },
 };

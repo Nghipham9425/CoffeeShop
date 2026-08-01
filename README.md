@@ -31,6 +31,7 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/coffee_b2b?schema=pu
 JWT_SECRET="change-this-local-secret"
 JWT_EXPIRES_IN="7d"
 CLIENT_ORIGINS="http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173"
+GOOGLE_CLIENT_ID="your-web-client-id.apps.googleusercontent.com"
 ```
 
 Chạy database PostgreSQL và pgAdmin:
@@ -168,6 +169,7 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/coffee_b2b?schema=pu
 JWT_SECRET="change-this-local-secret"
 JWT_EXPIRES_IN="7d"
 CLIENT_ORIGINS="http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173"
+GOOGLE_CLIENT_ID="your-web-client-id.apps.googleusercontent.com"
 ```
 
 Backend API:
@@ -281,10 +283,12 @@ DELETE /api/contact-messages/:id
 
 ## Các bảng chính trong database
 
-Database hiện tại được thu gọn còn 25 bảng, vừa đủ cho đồ án thương mại điện tử cà phê:
+Database hiện tại có 27 bảng, vừa đủ cho đồ án thương mại điện tử cà phê:
 
 ```text
 users
+oauth_accounts
+password_reset_tokens
 addresses
 categories
 products
@@ -320,6 +324,15 @@ cd frontend
 npm install
 npm run dev
 ```
+
+Để bật đăng nhập Google, tạo file `frontend/.env`:
+
+```env
+VITE_API_URL="http://localhost:4000/api"
+VITE_GOOGLE_CLIENT_ID="your-web-client-id.apps.googleusercontent.com"
+```
+
+Hai biến `GOOGLE_CLIENT_ID` và `VITE_GOOGLE_CLIENT_ID` phải dùng cùng một Web Client ID. Trong Google Cloud Console, thêm origin frontend đang chạy, ví dụ `http://localhost:3000` hoặc `http://localhost:5173`.
 
 Frontend mặc định:
 

@@ -1,7 +1,8 @@
-import { Check, ShoppingCart } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ProductMockup } from "../../../components/ProductMockup";
+import { Seo } from "../../../components/Seo";
 import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
 import { Card, CardContent } from "../../../components/ui/card";
@@ -16,7 +17,7 @@ const packTones = [
 ];
 
 export function ProductsPage() {
-  const { addItem, items } = useCart();
+  const { addItem } = useCart();
   const [products, setProducts] = useState<PublicProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -32,6 +33,11 @@ export function ProductsPage() {
 
   return (
     <main className="bg-stone-50">
+      <Seo
+        title="Sản phẩm cà phê rang xay"
+        description="Khám phá cà phê rang xay Phú Tài dành cho khách lẻ, quán cà phê và doanh nghiệp cần nguồn hàng ổn định."
+        canonicalPath="/san-pham"
+      />
       <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
         <Badge>Sản phẩm bán lẻ</Badge>
         <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -58,14 +64,13 @@ export function ProductsPage() {
 
         <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {products.map((product, index) => {
-            const isInCart = items.some((item) => item.productId === product.id);
-            const canBuy = product.price != null;
+            const canBuy = product.price != null && product.stockQuantity > 0;
 
             const now = new Date();
-            const activePromo = (product as any).prices?.find((p: any) => {
-              const start = p.startAt ? new Date(p.startAt) : null;
-              const end = p.endAt ? new Date(p.endAt) : null;
-              return p.isActive && (!start || start <= now) && (!end || end >= now);
+            const activePromo = product.prices.find((price) => {
+              const start = price.startAt ? new Date(price.startAt) : null;
+              const end = price.endAt ? new Date(price.endAt) : null;
+              return price.isActive && (!start || start <= now) && (!end || end >= now);
             });
 
             const isModifiedPrice = !!activePromo && product.price != null && activePromo.price !== product.price;
@@ -92,13 +97,16 @@ export function ProductsPage() {
                           <span className="font-black text-[var(--roast)]">{formatVnd(product.price)}</span>
                         )}
                       </div>
-                      <span className="text-sm font-bold text-stone-500">MOQ {product.minimumOrderKg}kg</span>
+                      <span className="text-right text-sm font-bold text-stone-500">{product.unit}</span>
                     </div>
-                    <Button className="mt-4 w-full" disabled={!canBuy} onClick={() => addItem(productToCart)} variant={isInCart ? "outline" : "default"}>
-                      {isInCart ? <Check size={18} /> : <ShoppingCart size={18} />}
-                      {isInCart ? "Đã có trong giỏ" : "Thêm giỏ hàng"}
+                    <p className={`mt-3 text-xs font-bold ${product.stockQuantity > 0 ? "text-emerald-700" : "text-red-700"}`}>
+                      {product.stockQuantity > 0 ? `Còn ${product.stockQuantity} ${product.unit}` : "Tạm hết hàng"}
+                    </p>
+                    <Button className="mt-4 w-full" disabled={!canBuy} onClick={() => addItem(productToCart)}>
+                      <ShoppingCart size={18} />
+                      {product.stockQuantity > 0 ? "Thêm giỏ hàng" : "Hết hàng"}
                     </Button>
-                    <Button asChild className="mt-3 w-full" variant="outline"><Link to={`/san-pham/${product.id}`}>Xem chi tiết</Link></Button>
+                    <Button asChild className="mt-3 w-full" variant="outline"><Link to={`/san-pham/${product.slug}`}>Xem chi tiết</Link></Button>
                   </div>
                 </CardContent>
               </Card>

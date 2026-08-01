@@ -12,6 +12,10 @@ export const loginSchema = z.object({
   password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự.").max(80, "Mật khẩu không được vượt quá 80 ký tự."),
 });
 
+export const googleLoginSchema = z.object({
+  credential: z.string().min(100, "Thông tin xác thực Google không hợp lệ.").max(5000),
+});
+
 export const forgotPasswordSchema = z.object({
   email: z.string().trim().email("Email không đúng định dạng.").max(160, "Email không được vượt quá 160 ký tự."),
 });
@@ -61,6 +65,7 @@ export const updateAddressSchema = addressSchema.partial().refine((value) => Obj
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type GoogleLoginInput = z.infer<typeof googleLoginSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

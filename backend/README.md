@@ -90,6 +90,7 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/coffee_b2b?schema=pu
 JWT_SECRET="change-this-local-secret"
 JWT_EXPIRES_IN="7d"
 CLIENT_ORIGINS="http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173"
+GOOGLE_CLIENT_ID="your-web-client-id.apps.googleusercontent.com"
 ```
 
 API mặc định:
@@ -182,10 +183,10 @@ GET  /api/health
 
 ## Database
 
-Database hiện tại gồm 25 bảng chính:
+Database hiện tại gồm 27 bảng chính:
 
 ```text
-users, addresses, categories, products, product_prices, inventories, stock_movements,
+users, oauth_accounts, password_reset_tokens, addresses, categories, products, product_prices, inventories, stock_movements,
 promotions, orders, order_items, payments, shipments, reviews,
 loyalty_profiles, business_customers, quote_requests, contracts,
 invoices, debts, suppliers, purchase_orders, purchase_order_items,

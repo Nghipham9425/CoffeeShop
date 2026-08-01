@@ -2,6 +2,7 @@ import { inventoryData } from "../../data/Inventory/Inventory.data.js";
 import type {
   CreateStockMovementInput,
   InventoryQueryInput,
+  StockMovementQueryInput,
   UpdateInventoryInput,
 } from "../../validators/Inventory/Inventory.validator.js";
 
@@ -35,6 +36,21 @@ export const inventoryService = {
     return mapInventory(await inventoryData.update(id, input));
   },
 
+  async getStockMovements(query: StockMovementQueryInput) {
+    return (await inventoryData.findMovements(query)).map((movement) => ({
+      id: movement.id,
+      productId: movement.productId,
+      productName: movement.product.name,
+      type: movement.type,
+      quantity: movement.quantity,
+      warehouse: movement.warehouse,
+      balanceAfter: movement.balanceAfter,
+      reason: movement.reason,
+      reference: movement.reference,
+      createdAt: movement.createdAt,
+    }));
+  },
+
   async createStockMovement(input: CreateStockMovementInput) {
     const result = await inventoryData.createMovement(input);
     return {
@@ -45,6 +61,8 @@ export const inventoryService = {
         quantity: result.movement.quantity,
         reason: result.movement.reason,
         reference: result.movement.reference,
+        warehouse: result.movement.warehouse,
+        balanceAfter: result.movement.balanceAfter,
         createdAt: result.movement.createdAt,
       },
       inventory: mapInventory(result.inventory),

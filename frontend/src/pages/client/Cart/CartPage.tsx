@@ -1,4 +1,4 @@
-import { CalendarCheck, CheckCircle2, CreditCard, Landmark, MapPin, Minus, PackageCheck, Plus, ShoppingBag, Truck, Trash2 } from "lucide-react";
+import { CalendarCheck, CheckCircle2, CreditCard, Landmark, MapPin, Minus, PackageCheck, Plus, ShoppingBag, Tag, Truck, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "../../../components/ui/badge";
@@ -7,7 +7,7 @@ import { Card, CardContent } from "../../../components/ui/card";
 import { useCart } from "../../../contexts/CartContext";
 import { adminAuth } from "../../../lib/adminApi";
 import { profileApi, type ProfileAddress } from "../../../lib/profileApi";
-import { formatVnd, publicApi, type CheckoutOrder, type SepayCheckoutSession } from "../../../lib/publicApi";
+import { formatVnd, publicApi, type CheckoutOrder, type SepayCheckoutSession, type VoucherPreview } from "../../../lib/publicApi";
 
 const SHIPPING_FEE = 25000;
 
@@ -38,7 +38,7 @@ const initialForm: CheckoutForm = {
 };
 
 export function CartPage() {
-  const { items, subtotal, updateQuantity, removeItem, clearCart } = useCart();
+  const { items, subtotal, updateQuantity, removeItem, clearCart, syncStock } = useCart();
   const [form, setForm] = useState<CheckoutForm>(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -46,8 +46,24 @@ export function CartPage() {
   const [defaultAddress, setDefaultAddress] = useState<ProfileAddress | null>(null);
   const [addressMode, setAddressMode] = useState<AddressMode>("MANUAL");
   const [loadingAddress, setLoadingAddress] = useState(Boolean(adminAuth.getToken()));
+  const [voucherCode, setVoucherCode] = useState("");
+  const [voucher, setVoucher] = useState<VoucherPreview | null>(null);
+  const [voucherError, setVoucherError] = useState("");
+  const [checkingVoucher, setCheckingVoucher] = useState(false);
 
-  const total = useMemo(() => subtotal + (items.length ? SHIPPING_FEE : 0), [items.length, subtotal]);
+  const total = useMemo(() => Math.max(0, subtotal - (voucher?.discountAmount ?? 0)) + (items.length ? SHIPPING_FEE : 0), [items.length, subtotal, voucher]);
+  const hasUnavailableItem = items.some((item) => item.stockQuantity <= 0 || item.quantity > item.stockQuantity);
+
+  useEffect(() => {
+    void publicApi.products().then(syncStock).catch(() => {
+      // Backend vẫn kiểm tra lại tồn kho khi tạo đơn.
+    });
+  }, []);
+
+  useEffect(() => {
+    setVoucher(null);
+    setVoucherError("");
+  }, [subtotal]);
 
   useEffect(() => {
     if (!adminAuth.getToken()) return;
@@ -95,6 +111,7 @@ export function CartPage() {
       const order = await publicApi.checkout({
         ...form,
         shippingFee: SHIPPING_FEE,
+        voucherCode: voucher?.code,
         items: items.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
@@ -111,6 +128,19 @@ export function CartPage() {
       setError(checkoutError instanceof Error ? checkoutError.message : "Không thể đặt hàng lúc này.");
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function applyVoucher() {
+    setCheckingVoucher(true);
+    setVoucherError("");
+    try {
+      setVoucher(await publicApi.validateVoucher(voucherCode, subtotal));
+    } catch (cause) {
+      setVoucher(null);
+      setVoucherError(cause instanceof Error ? cause.message : "Không thể kiểm tra mã giảm giá.");
+    } finally {
+      setCheckingVoucher(false);
     }
   }
 
@@ -177,6 +207,7 @@ export function CartPage() {
                       <p className="mt-2 text-stone-600">
                         {formatVnd(item.price)} / {item.unit}
                       </p>
+                      {item.stockQuantity <= 0 ? <p className="mt-2 text-sm font-bold text-red-700">Sản phẩm hiện đã hết hàng. Vui lòng xóa khỏi giỏ.</p> : null}
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                       <div className="flex items-center rounded-full border border-stone-200 bg-stone-50">
@@ -195,10 +226,12 @@ export function CartPage() {
                           size="icon"
                           variant="ghost"
                           onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                          disabled={item.quantity >= item.stockQuantity}
                         >
                           <Plus size={16} />
                         </Button>
                       </div>
+                      <span className="text-xs font-bold text-stone-500">Tối đa {item.stockQuantity} {item.unit}</span>
                       <strong className="min-w-32 text-right text-lg text-[var(--roast)]">
                         {formatVnd(item.price * item.quantity)}
                       </strong>
@@ -271,6 +304,12 @@ export function CartPage() {
                   onChange={(event) => setForm((current) => ({ ...current, note: event.target.value }))}
                 />
 
+                <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
+                  <label className="flex items-center gap-2 text-sm font-black text-stone-950"><Tag size={17} /> Mã giảm giá</label>
+                  {voucher ? <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm"><div><strong className="text-emerald-900">{voucher.code}</strong><p className="mt-1 text-xs text-emerald-700">{voucher.name} · giảm {formatVnd(voucher.discountAmount)}</p></div><Button type="button" size="icon" variant="ghost" aria-label="Bỏ mã giảm giá" onClick={() => { setVoucher(null); setVoucherCode(""); }}><X size={17} /></Button></div> : <div className="mt-3 flex gap-2"><input className="h-11 min-w-0 flex-1 rounded-lg border border-stone-200 bg-white px-3 font-bold uppercase outline-none focus:border-[var(--coffee)]" placeholder="VD: WELCOME10" value={voucherCode} onChange={(event) => setVoucherCode(event.target.value.toUpperCase())} /><Button type="button" variant="outline" onClick={applyVoucher} disabled={!voucherCode.trim() || !items.length || checkingVoucher}>{checkingVoucher ? "Đang kiểm tra" : "Áp dụng"}</Button></div>}
+                  {voucherError ? <p className="mt-2 text-xs font-bold text-red-700">{voucherError}</p> : null}
+                </div>
+
                 <div className="space-y-3 border-t border-stone-200 pt-5 text-sm">
                   <div className="flex justify-between">
                     <span>Tạm tính</span>
@@ -280,13 +319,14 @@ export function CartPage() {
                     <span>Phí vận chuyển</span>
                     <strong>{items.length ? formatVnd(SHIPPING_FEE) : formatVnd(0)}</strong>
                   </div>
+                  {voucher ? <div className="flex justify-between text-emerald-700"><span>Giảm giá ({voucher.code})</span><strong>-{formatVnd(voucher.discountAmount)}</strong></div> : null}
                   <div className="flex justify-between text-lg text-[var(--roast)]">
                     <span className="font-black">Tổng cộng</span>
                     <strong>{formatVnd(total)}</strong>
                   </div>
                 </div>
 
-                <Button className="w-full" disabled={!items.length || isSubmitting} type="submit">
+                <Button className="w-full" disabled={!items.length || isSubmitting || hasUnavailableItem} type="submit">
                   {isSubmitting ? "Đang tạo đơn..." : "Đặt hàng"}
                 </Button>
               </form>

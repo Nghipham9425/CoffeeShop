@@ -44,6 +44,8 @@ export type Product = {
   imageUrl: string | null;
   isRetail: boolean;
   isB2b: boolean;
+  isActive: boolean;
+  stockQuantity: number;
   prices: ProductPrice[];
 };
 
@@ -55,7 +57,17 @@ export type QuoteRequest = {
   productNeed: string;
   expectedQuantityKg: number | null;
   note: string | null;
-  status: "NEW" | "CONTACTED" | "QUOTED" | "CLOSED" | "CANCELLED";
+  status: "NEW" | "CONTACTED" | "QUOTED" | "ACCEPTED" | "REJECTED" | "CONVERTED" | "CLOSED" | "CANCELLED";
+  subtotal: number;
+  discountAmount: number;
+  totalAmount: number;
+  validUntil: string | null;
+  salesNote: string | null;
+  customerRespondedAt: string | null;
+  convertedAt: string | null;
+  items: Array<{ id: number; productId: number | null; description: string; quantity: number; unit: string; unitPrice: number; lineTotal: number; product: { id: number; name: string; unit: string } | null }>;
+  contract: { id: number; contractCode: string; status: string } | null;
+  order: { id: number; orderCode: string; status: string } | null;
   createdAt: string;
 };
 
@@ -118,6 +130,28 @@ export type AdminOrder = {
   } | null;
 };
 
+export type AdminReturnRequest = {
+  id: number;
+  type: "RETURN" | "EXCHANGE" | "REFUND";
+  reason: string;
+  status: "REQUESTED" | "REVIEWING" | "APPROVED" | "REJECTED" | "COMPLETED" | "CANCELLED";
+  resolutionNote: string | null;
+  createdAt: string;
+  user: { id: number; fullName: string; email: string; phone: string | null };
+  order: { id: number; orderCode: string; totalAmount: number; status: string };
+};
+
+export type AdminReview = {
+  id: number;
+  rating: number;
+  content: string | null;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  createdAt: string;
+  user: { id: number; fullName: string };
+  product: { id: number; name: string };
+  order: { id: number; orderCode: string; status: string } | null;
+};
+
 export type AdminInventory = {
   id: number;
   productId: number;
@@ -128,6 +162,19 @@ export type AdminInventory = {
   warehouse: string;
   isLowStock: boolean;
   updatedAt: string;
+};
+
+export type StockMovement = {
+  id: number;
+  productId: number;
+  productName: string;
+  type: "IMPORT" | "EXPORT" | "ADJUSTMENT" | "RETURN";
+  quantity: number;
+  warehouse: string;
+  balanceAfter: number | null;
+  reason: string | null;
+  reference: string | null;
+  createdAt: string;
 };
 
 export type RetailCustomer = {
@@ -215,6 +262,7 @@ export type ProductPayload = {
   imageUrl?: string;
   isRetail?: boolean;
   isB2b?: boolean;
+  isActive?: boolean;
 };
 
 export type ProductPricePayload = {
@@ -318,6 +366,13 @@ export const adminApi = {
     });
   },
 
+  googleLogin(credential: string) {
+    return request<LoginResponse>("/auth/google", {
+      method: "POST",
+      body: JSON.stringify({ credential }),
+    });
+  },
+
   register(payload: RegisterPayload) {
     return request<LoginResponse>("/auth/register", {
       method: "POST",
@@ -374,6 +429,10 @@ export const adminApi = {
     return request<Product[]>(`/products${buildQuery(params)}`);
   },
 
+  adminProducts(token: string, params: { keyword?: string; categorySlug?: string; isRetail?: boolean; isB2b?: boolean } = {}) {
+    return request<Product[]>(`/products/admin/list${buildQuery(params)}`, { headers: authHeaders(token) });
+  },
+
   createProduct(token: string, payload: ProductPayload) {
     return request<Product>("/products", {
       method: "POST",
@@ -417,6 +476,14 @@ export const adminApi = {
       headers: authHeaders(token),
       body: JSON.stringify({ status }),
     });
+  },
+
+  createQuotation(token: string, id: number, payload: { items: Array<{ productId?: number; description: string; quantity: number; unit: string; unitPrice: number }>; discountAmount: number; validUntil: string; salesNote?: string }) {
+    return request<QuoteRequest>(`/quote-requests/${id}/quotation`, { method: "PUT", headers: authHeaders(token), body: JSON.stringify(payload) });
+  },
+
+  convertQuotation(token: string, id: number, target: "CONTRACT" | "ORDER") {
+    return request<{ target: string; id: number; code: string }>(`/quote-requests/${id}/convert`, { method: "POST", headers: authHeaders(token), body: JSON.stringify({ target }) });
   },
 
   contactMessages(token: string) {
@@ -492,6 +559,10 @@ export const adminApi = {
     });
   },
 
+  stockMovements(token: string, params: { productId?: number; warehouse?: string; type?: StockMovement["type"] } = {}) {
+    return request<StockMovement[]>(`/inventories/movements${buildQuery(params)}`, { headers: authHeaders(token) });
+  },
+
   retailCustomers(token: string, params: { keyword?: string } = {}) {
     return request<RetailCustomer[]>(`/customers/retail${buildQuery(params)}`, {
       headers: authHeaders(token),
@@ -533,6 +604,11 @@ export const adminApi = {
       headers: authHeaders(token),
     });
   },
+
+  returnRequests(token: string) { return request<AdminReturnRequest[]>("/orders/return-requests/all", { headers: authHeaders(token) }); },
+  updateReturnRequest(token: string, id: number, payload: { status: AdminReturnRequest["status"]; resolutionNote?: string }) { return request<AdminReturnRequest>(`/orders/return-requests/${id}`, { method: "PATCH", headers: authHeaders(token), body: JSON.stringify(payload) }); },
+  reviews(token: string) { return request<AdminReview[]>("/reviews", { headers: authHeaders(token) }); },
+  updateReviewStatus(token: string, id: number, status: AdminReview["status"]) { return request<AdminReview>(`/reviews/${id}/status`, { method: "PATCH", headers: authHeaders(token), body: JSON.stringify({ status }) }); },
 };
 
 export function formatCurrency(value: number | null | undefined) {

@@ -26,6 +26,7 @@ export const createProductSchema = z.object({
   imageUrl: optionalTextSchema(500),
   isRetail: z.coerce.boolean().default(true),
   isB2b: z.coerce.boolean().default(true),
+  isActive: z.coerce.boolean().default(true),
 });
 
 export const updateProductSchema = createProductSchema.partial();

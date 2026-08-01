@@ -109,8 +109,8 @@ export function ReportsPage() {
                 <p className="mt-2 text-3xl font-black text-[#553B2F]">{overview.quoteCount}</p>
               </div>
               <div className="rounded-xl border border-[#E8D3C7] bg-white p-4">
-                <p className="text-sm font-bold text-[#AA7864]">Liên hệ chưa đọc</p>
-                <p className="mt-2 text-3xl font-black text-[#553B2F]">{overview.unreadContactCount}</p>
+                <p className="text-sm font-bold text-[#AA7864]">Đơn hàng chờ xử lý</p>
+                <p className="mt-2 text-3xl font-black text-[#553B2F]">{overview.pendingOrderCount}</p>
               </div>
               <div className="rounded-xl border border-[#E8D3C7] bg-white p-4">
                 <p className="text-sm font-bold text-[#AA7864]">Tồn kho thấp</p>

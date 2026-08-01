@@ -11,6 +11,8 @@ export type ProductModel = {
   imageUrl: string | null;
   isRetail: boolean;
   isB2b: boolean;
+  isActive: boolean;
+  stockQuantity: number;
   prices: ProductPriceModel[];
 };
 

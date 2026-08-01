@@ -7,6 +7,8 @@ import { authMiddleware, authorizeRoles } from "../../middleware/authMiddleware.
 export const quoteRequestRoutes = Router();
 
 quoteRequestRoutes.post("/", asyncHandler(quoteRequestController.createQuoteRequest));
+quoteRequestRoutes.get("/public/:id", asyncHandler(quoteRequestController.getPublicQuote));
+quoteRequestRoutes.post("/public/:id/respond", asyncHandler(quoteRequestController.respondQuotation));
 quoteRequestRoutes.get(
   "/",
   authMiddleware,
@@ -25,3 +27,5 @@ quoteRequestRoutes.patch(
   authorizeRoles(UserRole.ADMIN, UserRole.SALES),
   asyncHandler(quoteRequestController.updateQuoteRequestStatus),
 );
+quoteRequestRoutes.put("/:id/quotation", authMiddleware, authorizeRoles(UserRole.ADMIN, UserRole.SALES), asyncHandler(quoteRequestController.createQuotation));
+quoteRequestRoutes.post("/:id/convert", authMiddleware, authorizeRoles(UserRole.ADMIN, UserRole.SALES), asyncHandler(quoteRequestController.convertQuotation));
