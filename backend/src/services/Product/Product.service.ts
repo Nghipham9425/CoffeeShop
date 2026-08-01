@@ -38,10 +38,7 @@ function mapProduct(product: ProductRecord): ProductModel {
 
 async function ensureCategoryExists(categoryId: number) {
   const category = await productData.findCategoryById(categoryId);
-
-  if (!category) {
-    throw new Error("CATEGORY_NOT_FOUND");
-  }
+  if (!category) throw new Error("CATEGORY_NOT_FOUND");
 }
 
 async function buildUniqueSlug(name: string, preferredSlug?: string, currentProductId?: number) {
@@ -51,11 +48,7 @@ async function buildUniqueSlug(name: string, preferredSlug?: string, currentProd
 
   while (true) {
     const existingProduct = await productData.findBySlug(slug);
-
-    if (!existingProduct || existingProduct.id === currentProductId) {
-      return slug;
-    }
-
+    if (!existingProduct || existingProduct.id === currentProductId) return slug;
     suffix += 1;
     slug = `${baseSlug}-${suffix}`;
   }
@@ -74,63 +67,38 @@ export const productService = {
 
   async createProduct(input: CreateProductInput) {
     await ensureCategoryExists(input.categoryId);
-
     const slug = await buildUniqueSlug(input.name, input.slug);
-    const product = await productData.create({
-      ...input,
-      slug,
-    });
-
+    const product = await productData.create({ ...input, slug });
     return mapProduct(product);
   },
 
   async updateProduct(id: number, input: UpdateProductInput) {
     const existingProduct = await productData.findById(id);
+    if (!existingProduct) throw new Error("PRODUCT_NOT_FOUND");
+    if (input.categoryId) await ensureCategoryExists(input.categoryId);
 
-    if (!existingProduct) {
-      throw new Error("PRODUCT_NOT_FOUND");
-    }
+    const slug = input.name || input.slug
+      ? await buildUniqueSlug(input.name ?? existingProduct.name, input.slug, id)
+      : undefined;
 
-    if (input.categoryId) {
-      await ensureCategoryExists(input.categoryId);
-    }
-
-    const slug =
-      input.name || input.slug
-        ? await buildUniqueSlug(input.name ?? existingProduct.name, input.slug, id)
-        : undefined;
-
-    const product = await productData.update(id, {
-      ...input,
-      slug,
-    });
-
+    const product = await productData.update(id, { ...input, slug });
     return mapProduct(product);
   },
 
   async deleteProduct(id: number) {
     const existingProduct = await productData.findById(id);
-
-    if (!existingProduct) {
-      throw new Error("PRODUCT_NOT_FOUND");
-    }
-
+    if (!existingProduct) throw new Error("PRODUCT_NOT_FOUND");
     await productData.softDelete(id);
   },
 
   async addProductPrice(productId: number, input: CreateProductPriceInput) {
     const existingProduct = await productData.findById(productId);
-
-    if (!existingProduct) {
-      throw new Error("PRODUCT_NOT_FOUND");
-    }
-
+    if (!existingProduct) throw new Error("PRODUCT_NOT_FOUND");
     if (input.startAt && input.endAt && input.endAt < input.startAt) {
       throw new Error("INVALID_PRICE_DATE_RANGE");
     }
 
     const price = await productData.upsertPrice(productId, input);
-
     return {
       id: price.id,
       productId: price.productId,

@@ -1,4 +1,6 @@
 import "dotenv/config";
+import dotenv from 'dotenv';
+dotenv.config();
 
 const defaultClientOrigins = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173";
 const clientOrigins = (process.env.CLIENT_ORIGINS ?? process.env.CLIENT_ORIGIN ?? defaultClientOrigins)
@@ -21,6 +23,7 @@ export const env = {
   sepaySecretKey: process.env.SEPAY_SECRET_KEY?.trim(),
   clientAppUrl: process.env.CLIENT_APP_URL?.trim() ?? (clientOrigins[0] ?? "http://localhost:3000"),
   sepayPaymentExpiryMinutes: Number(process.env.SEPAY_PAYMENT_EXPIRY_MINUTES ?? 30),
+  geminiApiKey: process.env.GEMINI_API_KEY || '',
 };
 
 export const isDevelopment = env.nodeEnv === "development";

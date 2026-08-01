@@ -23,24 +23,11 @@ export function ProductsPage() {
 
   useEffect(() => {
     let isMounted = true;
-
-    publicApi
-      .products()
-      .then((data) => {
-        if (isMounted) setProducts(data);
-      })
-      .catch((apiError) => {
-        if (isMounted) {
-          setError(apiError instanceof Error ? apiError.message : "Không thể tải danh sách sản phẩm.");
-        }
-      })
-      .finally(() => {
-        if (isMounted) setIsLoading(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
+    publicApi.products()
+      .then((data) => { if (isMounted) setProducts(data); })
+      .catch((apiError) => { if (isMounted) setError(apiError instanceof Error ? apiError.message : "Không thể tải danh sách sản phẩm."); })
+      .finally(() => { if (isMounted) setIsLoading(false); });
+    return () => { isMounted = false; };
   }, []);
 
   return (
@@ -49,87 +36,69 @@ export function ProductsPage() {
         <Badge>Sản phẩm bán lẻ</Badge>
         <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="font-serif text-4xl font-black text-stone-950 md:text-6xl">
-              Cà phê rang xay Phú Tài
-            </h1>
-            <p className="mt-4 max-w-2xl text-lg leading-8 text-stone-600">
-              Danh mục sản phẩm dành cho khách lẻ. Khách doanh nghiệp có thể gửi yêu cầu báo giá để nhận chính sách sỉ, hợp đồng và công nợ riêng.
-            </p>
+            <h1 className="font-serif text-4xl font-black text-stone-950 md:text-6xl">Cà phê rang xay Phú Tài</h1>
+            <p className="mt-4 max-w-2xl text-lg leading-8 text-stone-600">Danh mục sản phẩm dành cho khách lẻ. Khách doanh nghiệp có thể gửi yêu cầu báo giá để nhận chính sách sỉ.</p>
           </div>
-          <Button asChild variant="outline">
-            <Link to="/bao-gia">Gửi báo giá B2B</Link>
-          </Button>
+          <Button asChild variant="outline"><Link to="/bao-gia">Gửi báo giá B2B</Link></Button>
         </div>
 
-        {error ? (
-          <Card className="mt-8 border-red-100 bg-red-50">
-            <CardContent className="p-5 font-bold text-red-700">{error}</CardContent>
-          </Card>
-        ) : null}
+        {error && <Card className="mt-8 border-red-100 bg-red-50"><CardContent className="p-5 font-bold text-red-700">{error}</CardContent></Card>}
 
-        {isLoading ? (
+        {isLoading && (
           <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {Array.from({ length: 4 }).map((_, index) => (
-              <Card key={index} className="bg-white">
-                <CardContent className="p-5">
-                  <div className="h-64 animate-pulse rounded-3xl bg-stone-200" />
-                  <div className="mt-5 h-5 w-24 animate-pulse rounded bg-stone-200" />
-                  <div className="mt-4 h-7 w-full animate-pulse rounded bg-stone-200" />
-                  <div className="mt-3 h-16 w-full animate-pulse rounded bg-stone-100" />
-                </CardContent>
-              </Card>
+              <Card key={index} className="bg-white"><CardContent className="p-5"><div className="h-64 animate-pulse rounded-3xl bg-stone-200" /><div className="mt-5 h-5 w-24 animate-pulse rounded bg-stone-200" /><div className="mt-4 h-7 w-full animate-pulse rounded bg-stone-200" /><div className="mt-3 h-16 w-full animate-pulse rounded bg-stone-100" /></CardContent></Card>
             ))}
           </div>
-        ) : null}
+        )}
 
-        {!isLoading && products.length === 0 ? (
-          <Card className="mt-8 bg-white">
-            <CardContent className="p-8 text-center">
-              <h2 className="text-2xl font-black">Chưa có sản phẩm bán lẻ</h2>
-              <p className="mt-2 text-stone-600">Bạn có thể thêm sản phẩm retail trong trang quản trị.</p>
-            </CardContent>
-          </Card>
-        ) : null}
+        {!isLoading && products.length === 0 && (
+          <Card className="mt-8 bg-white"><CardContent className="p-8 text-center"><h2 className="text-2xl font-black">Chưa có sản phẩm bán lẻ</h2></CardContent></Card>
+        )}
 
         <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {products.map((product, index) => {
             const isInCart = items.some((item) => item.productId === product.id);
             const canBuy = product.price != null;
 
+            const now = new Date();
+            const activePromo = (product as any).prices?.find((p: any) => {
+              const start = p.startAt ? new Date(p.startAt) : null;
+              const end = p.endAt ? new Date(p.endAt) : null;
+              return p.isActive && (!start || start <= now) && (!end || end >= now);
+            });
+
+            const isModifiedPrice = !!activePromo && product.price != null && activePromo.price !== product.price;
+            const displayPrice = isModifiedPrice ? activePromo.price : product.price;
+            const productToCart = isModifiedPrice ? { ...product, price: displayPrice } : product;
+
             return (
               <Card key={product.id} className="bg-white">
                 <CardContent className="flex h-full flex-col p-5">
-                  {product.imageUrl ? (
-                    <img
-                      alt={product.name}
-                      className="h-64 w-full rounded-3xl object-cover"
-                      src={product.imageUrl}
-                    />
-                  ) : (
-                    <ProductMockup tone={packTones[index % packTones.length]} />
-                  )}
+                  {product.imageUrl ? <img alt={product.name} className="h-64 w-full rounded-3xl object-cover" src={product.imageUrl} /> : <ProductMockup tone={packTones[index % packTones.length]} />}
                   <Badge className="mt-5">{product.categoryName}</Badge>
                   <h2 className="mt-3 text-xl font-black text-stone-950">{product.name}</h2>
-                  <p className="mt-2 line-clamp-3 text-sm leading-6 text-stone-600">
-                    {product.description || "Sản phẩm cà phê rang xay phù hợp cho nhu cầu dùng thử và mua lẻ."}
-                  </p>
+                  <p className="mt-2 line-clamp-3 text-sm leading-6 text-stone-600">{product.description || "Sản phẩm cà phê rang xay phù hợp cho nhu cầu dùng thử và mua lẻ."}</p>
+                  
                   <div className="mt-auto pt-5">
                     <div className="flex items-center justify-between gap-3">
-                      <span className="font-black text-[var(--roast)]">{formatVnd(product.price)}</span>
+                      <div className="flex flex-col">
+                        {isModifiedPrice && product.price != null ? (
+                          <>
+                            <span className="text-sm font-bold text-stone-400 line-through">{formatVnd(product.price)}</span>
+                            <span className={`font-black text-lg ${activePromo.price > (product.price ?? 0) ? 'text-orange-600' : 'text-red-600'}`}>{formatVnd(displayPrice)}</span>
+                          </>
+                        ) : (
+                          <span className="font-black text-[var(--roast)]">{formatVnd(product.price)}</span>
+                        )}
+                      </div>
                       <span className="text-sm font-bold text-stone-500">MOQ {product.minimumOrderKg}kg</span>
                     </div>
-                    <Button
-                      className="mt-4 w-full"
-                      disabled={!canBuy}
-                      onClick={() => addItem(product)}
-                      variant={isInCart ? "outline" : "default"}
-                    >
+                    <Button className="mt-4 w-full" disabled={!canBuy} onClick={() => addItem(productToCart)} variant={isInCart ? "outline" : "default"}>
                       {isInCart ? <Check size={18} /> : <ShoppingCart size={18} />}
                       {isInCart ? "Đã có trong giỏ" : "Thêm giỏ hàng"}
                     </Button>
-                    <Button asChild className="mt-3 w-full" variant="outline">
-                      <Link to={`/san-pham/${product.id}`}>Xem chi tiết</Link>
-                    </Button>
+                    <Button asChild className="mt-3 w-full" variant="outline"><Link to={`/san-pham/${product.id}`}>Xem chi tiết</Link></Button>
                   </div>
                 </CardContent>
               </Card>
