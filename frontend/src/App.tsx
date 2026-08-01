@@ -26,6 +26,8 @@ import { AddressesPage } from "./pages/client/Account/AddressesPage";
 import { ChangePasswordPage } from "./pages/client/Account/ChangePasswordPage";
 import { ProfilePage } from "./pages/client/Account/ProfilePage";
 import { OrderHistoryPage } from "./pages/client/Account/OrderHistoryPage";
+import PromotionsPage from './pages/admin/promotions/PromotionsPage';
+import AdminChatbotPage from './pages/admin/chatbot/AdminChatbotPage';
 
 export default function App() {
   return (
@@ -62,6 +64,8 @@ export default function App() {
         <Route path="kho" element={<AdminInventoryPage />} />
         <Route path="lien-he" element={<AdminContactsPage />} />
         <Route path="bao-cao" element={<AdminReportsPage />} />
+        <Route path="promotions" element={<PromotionsPage />} />
+        <Route path="chatbot" element={<AdminChatbotPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

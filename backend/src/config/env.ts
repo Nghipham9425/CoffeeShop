@@ -27,6 +27,7 @@ export const env = {
   smtpPass: process.env.SMTP_PASS?.trim(),
   mailFrom: process.env.MAIL_FROM?.trim(),
   resetPasswordExpiresMinutes: Number(process.env.RESET_PASSWORD_EXPIRES_MINUTES ?? 30),
+  geminiApiKey: process.env.GEMINI_API_KEY?.trim() ?? "",
 };
 
 export const isDevelopment = env.nodeEnv === "development";

@@ -3,6 +3,8 @@ import { FaFacebookF, FaInstagram, FaTiktok, FaYoutube } from "react-icons/fa";
 import { NavLink, Outlet } from "react-router-dom";
 import { useCart } from "../contexts/CartContext";
 import { adminAuth } from "../lib/adminApi";
+// Nhúng CustomerChatbot vào Layout công cộng
+import CustomerChatbot from "../components/Chatbot/CustomerChatbot";
 
 const navItems = [
   ["Trang chủ", "/"],
@@ -162,6 +164,9 @@ export function PublicLayout() {
           Copyright 2026 © Phú Tài Coffee Works
         </div>
       </footer>
+      
+      {/* KHỞI TẠO CHATBOT Ở ĐÂY ĐỂ HIỂN THỊ GÓC MÀN HÌNH */}
+      <CustomerChatbot />
     </div>
   );
 }

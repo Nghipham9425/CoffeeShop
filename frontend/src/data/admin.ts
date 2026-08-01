@@ -3,8 +3,10 @@ import {
   Boxes,
   ClipboardList,
   FileText,
+  Gift,
   Inbox,
   LayoutDashboard,
+  Bot,
   Package,
   Tags,
   Users,
@@ -35,6 +37,8 @@ export const adminNavItems: AdminNavItem[] = [
   { label: "Tồn kho", to: "/admin/kho", icon: Boxes },
   { label: "Liên hệ", to: "/admin/lien-he", icon: Inbox },
   { label: "Báo cáo", to: "/admin/bao-cao", icon: BarChart3 },
+  { label: "Khuyến mãi", to: "/admin/promotions", icon: Gift, end: false },
+  { label: "Trợ Lý AI", to: "/admin/chatbot", icon: Bot, end: false}
 ];
 
 export const adminFallbackPages = {

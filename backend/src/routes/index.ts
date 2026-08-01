@@ -12,6 +12,8 @@ import { asyncHandler } from "../middleware/asyncHandler.js";
 import { productRoutes } from "./Product/Product.routes.js";
 import { quoteRequestRoutes } from "./QuoteRequest/QuoteRequest.routes.js";
 import { reportRoutes } from "./Report/Report.routes.js";
+import promotionRoutes from "./Promotion/Promotion.routes.js";
+import chatbotRoutes from './Chatbot/Chatbot.routes.js';
 
 export const apiRoutes = Router();
 
@@ -23,8 +25,9 @@ apiRoutes.use("/health", healthRoutes);
 apiRoutes.use("/inventories", inventoryRoutes);
 apiRoutes.use("/orders", orderRoutes);
 apiRoutes.use("/payments", paymentRoutes);
-// Giữ URL tương thích với cấu hình webhook SePay đã dùng trước đó.
 apiRoutes.post("/sepay/webhook", asyncHandler(paymentController.receiveSepayWebhook));
 apiRoutes.use("/products", productRoutes);
 apiRoutes.use("/quote-requests", quoteRequestRoutes);
 apiRoutes.use("/reports", reportRoutes);
+apiRoutes.use("/promotions", promotionRoutes);
+apiRoutes.use("/chatbot", chatbotRoutes);
