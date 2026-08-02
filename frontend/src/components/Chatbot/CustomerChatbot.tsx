@@ -4,6 +4,7 @@ import { adminAuth } from '../../lib/adminApi';
 
 type Message = { id: string; sender: 'USER' | 'BOT'; content: string };
 type Conversation = { id: number; topic: string; updatedAt: string };
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000/api';
 
 const CustomerChatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -66,7 +67,7 @@ const CustomerChatbot = () => {
 
   const fetchConversationsList = async (token: string) => {
     try {
-      const res = await fetch('http://localhost:4000/api/chatbot/conversations', {
+      const res = await fetch(`${API_URL}/chatbot/conversations`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const json = await res.json();
@@ -82,7 +83,7 @@ const CustomerChatbot = () => {
     try {
       const headers = getChatHeaders();
 
-      const res = await fetch(`http://localhost:4000/api/chatbot/${convId}/history`, { headers });
+      const res = await fetch(`${API_URL}/chatbot/${convId}/history`, { headers });
       const json = await res.json();
       
       if (json.success && json.data?.messages) {
@@ -121,7 +122,7 @@ const CustomerChatbot = () => {
     if (!window.confirm("Bạn có muốn xóa cuộc trò chuyện này không?")) return;
 
     try {
-      const res = await fetch(`http://localhost:4000/api/chatbot/${id}`, {
+      const res = await fetch(`${API_URL}/chatbot/${id}`, {
         method: 'DELETE',
         headers: getChatHeaders()
       });
@@ -162,7 +163,7 @@ const CustomerChatbot = () => {
 
       // Lazy Creation: Chỉ tạo đoạn chat mới khi gửi tin nhắn đầu tiên
       if (!activeConvId) {
-        const startRes = await fetch('http://localhost:4000/api/chatbot/start', {
+        const startRes = await fetch(`${API_URL}/chatbot/start`, {
           method: 'POST',
           headers,
           body: JSON.stringify({ topic: 'Tư vấn Khách hàng' })
@@ -180,7 +181,7 @@ const CustomerChatbot = () => {
         }
       }
 
-      const res = await fetch('http://localhost:4000/api/chatbot/send', {
+      const res = await fetch(`${API_URL}/chatbot/send`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ conversationId: activeConvId, message: text })
