@@ -11,6 +11,9 @@ import { apiRoutes } from "./routes/index.js"
 
 export const app = express()
 
+// Render terminates HTTPS at one reverse proxy and forwards the client IP.
+app.set("trust proxy", 1)
+
 app.use(helmet())
 app.use(
   cors({
