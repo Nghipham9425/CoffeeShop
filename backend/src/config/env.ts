@@ -26,6 +26,8 @@ export const env = {
   smtpUser: process.env.SMTP_USER?.trim(),
   smtpPass: process.env.SMTP_PASS?.trim(),
   mailFrom: process.env.MAIL_FROM?.trim(),
+  resendApiKey: process.env.RESEND_API_KEY?.trim(),
+  resendFrom: process.env.RESEND_FROM?.trim(),
   resetPasswordExpiresMinutes: Number(process.env.RESET_PASSWORD_EXPIRES_MINUTES ?? 30),
   googleClientId: process.env.GOOGLE_CLIENT_ID?.trim(),
   cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME?.trim(),
