@@ -6,6 +6,7 @@ import { Seo } from "../../../components/Seo";
 import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
 import { Card, CardContent } from "../../../components/ui/card";
+import { Pagination } from "../../../components/ui/pagination";
 import { useCart } from "../../../contexts/CartContext";
 import { formatVnd, publicApi, type PublicProduct } from "../../../lib/publicApi";
 
@@ -21,6 +22,8 @@ export function ProductsPage() {
   const [products, setProducts] = useState<PublicProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 8;
 
   useEffect(() => {
     let isMounted = true;
@@ -30,6 +33,8 @@ export function ProductsPage() {
       .finally(() => { if (isMounted) setIsLoading(false); });
     return () => { isMounted = false; };
   }, []);
+
+  const visibleProducts = products.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <main className="bg-stone-50">
@@ -63,7 +68,7 @@ export function ProductsPage() {
         )}
 
         <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {products.map((product, index) => {
+          {visibleProducts.map((product, index) => {
             const canBuy = product.price != null && product.stockQuantity > 0;
 
             const now = new Date();
@@ -113,6 +118,7 @@ export function ProductsPage() {
             );
           })}
         </div>
+        <div className="mt-8"><Pagination page={page} pageSize={pageSize} total={products.length} onChange={setPage} /></div>
       </section>
     </main>
   );

@@ -12,6 +12,7 @@ import {
 } from "../../../lib/adminApi";
 import { AdminPageShell } from "../shared/AdminPageShell";
 import { EmptyState, ErrorState, LoadingState } from "../shared/ApiState";
+import { Pagination } from "../../../components/ui/pagination";
 
 const emptyProductForm: ProductPayload = {
   categoryId: 0,
@@ -40,6 +41,8 @@ export function ProductsPage() {
   const [saving, setSaving] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [error, setError] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
   const formTitle = useMemo(() => (editingId ? "Cập nhật sản phẩm" : "Thêm sản phẩm"), [editingId]);
 
@@ -54,6 +57,7 @@ export function ProductsPage() {
         adminApi.categories({ includeInactive: true }),
       ]);
       setProducts(productResult);
+      setPage(1);
       setCategories(categoryResult.filter((category) => category.isActive));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không tải được sản phẩm");
@@ -74,6 +78,8 @@ export function ProductsPage() {
     setEditingId(null);
     setShowForm(true);
   }
+
+  const visibleProducts = products.slice((page - 1) * pageSize, page * pageSize);
 
   function startEdit(product: Product) {
     setForm({
@@ -280,7 +286,7 @@ export function ProductsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E8D3C7]">
-                {products.map((product) => (
+                {visibleProducts.map((product) => (
                   <tr key={product.id} className={`text-[#553B2F] ${product.isActive ? "" : "bg-stone-50 opacity-70"}`}>
                     <td className="px-5 py-4 font-black">{product.name}</td>
                     <td className="px-5 py-4 font-semibold text-[#7a5547]">{product.categoryName}</td>
@@ -306,6 +312,7 @@ export function ProductsPage() {
                 ))}
               </tbody>
             </table>
+            <Pagination page={page} pageSize={pageSize} total={products.length} onChange={setPage} />
           </div>
         ) : (
           <EmptyState message="Chưa có sản phẩm." />

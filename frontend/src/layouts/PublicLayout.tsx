@@ -16,10 +16,10 @@ const navItems = [
 ];
 
 const socials = [
-  ["Facebook", FaFacebookF],
-  ["Instagram", FaInstagram],
-  ["TikTok", FaTiktok],
-  ["YouTube", FaYoutube],
+  ["Facebook", "https://www.facebook.com/", FaFacebookF],
+  ["Instagram", "https://www.instagram.com/", FaInstagram],
+  ["TikTok", "https://www.tiktok.com/", FaTiktok],
+  ["YouTube", "https://www.youtube.com/", FaYoutube],
 ];
 
 export function PublicLayout() {
@@ -74,13 +74,16 @@ export function PublicLayout() {
       <header className="bg-white">
         <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-8 px-6 py-5 lg:px-10">
           <NavLink to="/" className="flex items-center gap-4">
-            <div className="brand-mark">
+            <div className="brand-mark hidden">
               <span className="brand-cafe">CAFÉ</span>
               <span className="brand-cup" />
               <span className="brand-bean brand-bean-one" />
               <span className="brand-bean brand-bean-two" />
               <Leaf className="brand-leaf brand-leaf-top" size={18} strokeWidth={2} />
               <Leaf className="brand-leaf brand-leaf-side" size={20} strokeWidth={2} />
+            </div>
+            <div className="grid h-20 w-28 shrink-0 place-items-center overflow-hidden">
+              <img src="/images/brand/logo-phu-tai.png" alt="Phú Tài Coffee Work" className="h-24 w-24 scale-[1.42] object-contain" />
             </div>
             <div className="leading-tight">
               <p className="text-2xl font-black uppercase">Phú Tài Coffee Works</p>
@@ -187,11 +190,6 @@ export function PublicLayout() {
                   </span>
                 ) : null}
               </NavLink>
-              {socials.map(([label, Icon]) => (
-                <a key={label as string} href="#" aria-label={label as string} className="social-icon">
-                  <Icon size={18} />
-                </a>
-              ))}
             </div>
           </div>
         </div>
@@ -206,6 +204,13 @@ export function PublicLayout() {
             <p className="mt-4 max-w-md leading-7 text-white/70">
               Nhà máy rang xay, gia công và đóng gói cà phê cho quán, đại lý, doanh nghiệp F&B và thương hiệu riêng.
             </p>
+            <div className="mt-5 flex items-center gap-2">
+              {socials.map(([label, href, Icon]) => (
+                <a key={label as string} href={href as string} target="_blank" rel="noreferrer" aria-label={label as string} className="grid h-9 w-9 place-items-center rounded-full border border-white/25 text-white transition-colors hover:border-[#d3a26a] hover:bg-[#d3a26a] hover:text-[#2a1a12]">
+                  <Icon size={16} />
+                </a>
+              ))}
+            </div>
           </div>
           <div>
             <p className="text-lg font-black uppercase">Liên hệ</p>

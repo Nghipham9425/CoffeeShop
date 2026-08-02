@@ -220,7 +220,20 @@ export function CartPage() {
                         >
                           <Minus size={16} />
                         </Button>
-                        <span className="w-12 text-center font-black">{item.quantity}</span>
+                        <input
+                          aria-label={`Số lượng ${item.name}`}
+                          type="number"
+                          min={1}
+                          max={item.stockQuantity}
+                          defaultValue={item.quantity}
+                          onBlur={(event) => {
+                            const quantity = Number(event.currentTarget.value);
+                            if (Number.isFinite(quantity)) updateQuantity(item.productId, Math.round(quantity));
+                            event.currentTarget.value = String(Math.min(item.stockQuantity, Math.max(1, Math.round(quantity) || 1)));
+                          }}
+                          onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }}
+                          className="h-9 w-14 bg-transparent text-center font-black outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        />
                         <Button
                           aria-label="Tăng số lượng"
                           size="icon"
