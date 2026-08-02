@@ -1,8 +1,8 @@
-import { LoaderCircle, Save, UserRound } from "lucide-react"
+import { Award, LoaderCircle, Save, ShoppingBag, Star, UserRound } from "lucide-react"
 import { useEffect, useState, type FormEvent } from "react"
 import { Button } from "../../../components/ui/button"
 import { adminAuth } from "../../../lib/adminApi"
-import { profileApi } from "../../../lib/profileApi"
+import { profileApi, type CustomerProfile } from "../../../lib/profileApi"
 import { AccountPageShell, Alert } from "./AccountPageShell"
 
 export function ProfilePage() {
@@ -13,6 +13,7 @@ export function ProfilePage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [loyalty, setLoyalty] = useState<CustomerProfile["loyaltyProfile"]>(null)
   useEffect(() => {
     void (async () => {
       try {
@@ -20,6 +21,7 @@ export function ProfilePage() {
         setFullName(me.fullName)
         setPhone(me.phone ?? "")
         setEmail(me.email)
+        setLoyalty(me.loyaltyProfile)
       } catch (cause) {
         setError(
           cause instanceof Error
@@ -60,6 +62,23 @@ export function ProfilePage() {
       title="Thông tin cá nhân"
       description="Cập nhật thông tin cá nhân để đặt hàng nhanh hơn."
     >
+      <section className="rounded-2xl border border-[#e7d7ca] bg-[#fffaf5] p-6 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="grid h-11 w-11 place-items-center rounded-xl bg-[var(--coffee)] text-white"><Award size={21} /></span>
+            <div>
+              <h2 className="text-xl font-black text-stone-950">Khách hàng thân thiết</h2>
+              <p className="text-sm text-stone-600">Điểm được cộng khi đơn hàng hoàn thành.</p>
+            </div>
+          </div>
+          <span className="rounded-full bg-[#ead7b7] px-3 py-1 text-sm font-black text-[#573b2b]">{tierLabel(loyalty?.tier)}</span>
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <LoyaltyMetric icon={Star} label="Điểm tích lũy" value={`${loyalty?.points ?? 0} điểm`} />
+          <LoyaltyMetric icon={ShoppingBag} label="Đơn đã hoàn thành" value={`${loyalty?.orderCount ?? 0} đơn`} />
+          <LoyaltyMetric icon={Award} label="Tổng chi tiêu" value={formatMoney(loyalty?.totalSpent ?? 0)} />
+        </div>
+      </section>
       <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
         <div className="flex items-center gap-3">
           <span className="grid h-11 w-11 place-items-center rounded-xl bg-stone-100 text-[var(--roast)]">
@@ -126,6 +145,18 @@ export function ProfilePage() {
       </section>
     </AccountPageShell>
   )
+}
+
+function tierLabel(tier?: "REGULAR" | "SILVER" | "GOLD" | "VIP") {
+  return ({ REGULAR: "Thành viên", SILVER: "Hạng Bạc", GOLD: "Hạng Vàng", VIP: "Hạng VIP" } as Record<string, string>)[tier ?? "REGULAR"]
+}
+
+function formatMoney(value: number) {
+  return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(value)
+}
+
+function LoyaltyMetric({ icon: Icon, label, value }: { icon: typeof Star; label: string; value: string }) {
+  return <div className="rounded-xl border border-[#eadbce] bg-white px-4 py-3"><div className="flex items-center gap-2 text-xs font-bold text-stone-500"><Icon size={15} /> {label}</div><p className="mt-2 text-lg font-black text-[var(--coffee)]">{value}</p></div>
 }
 function Field({
   label,

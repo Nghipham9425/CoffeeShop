@@ -97,6 +97,13 @@ enum ChatbotSender {
   STAFF
 }
 
+enum NotificationType {
+  ORDER_CREATED
+  ORDER_STATUS_CHANGED
+  PAYMENT_UPDATED
+  GENERAL
+}
+
 enum DiscountType {
   PERCENT
   FIXED_AMOUNT
@@ -171,8 +178,26 @@ model User {
   oauthAccounts        OAuthAccount[]
   returnRequests       ReturnRequest[]
   priceAdjustments     PriceAdjustment[]
+  notifications        Notification[]
 
   @@map("users")
+}
+
+model Notification {
+  id            Int              @id @default(autoincrement())
+  userId        Int              @map("user_id")
+  type          NotificationType @default(GENERAL)
+  title         String
+  content       String
+  link          String?
+  referenceType String?          @map("reference_type")
+  referenceId   Int?             @map("reference_id")
+  isRead        Boolean          @default(false) @map("is_read")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt])
+  @@map("notifications")
 }
 
 model OAuthAccount {

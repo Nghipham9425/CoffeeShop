@@ -19,6 +19,23 @@ export type CustomerProfile = AdminUser & {
   createdAt: string;
   orderCount: number;
   addresses: ProfileAddress[];
+  loyaltyProfile: {
+    tier: "REGULAR" | "SILVER" | "GOLD" | "VIP";
+    points: number;
+    totalSpent: number;
+    orderCount: number;
+    lastPurchaseAt: string | null;
+  } | null;
+};
+
+export type UserNotification = {
+  id: number;
+  type: "ORDER_CREATED" | "ORDER_STATUS_CHANGED" | "PAYMENT_UPDATED" | "GENERAL";
+  title: string;
+  content: string;
+  link: string | null;
+  isRead: boolean;
+  createdAt: string;
 };
 
 export type AddressPayload = Pick<ProfileAddress, "receiverName" | "phone" | "province" | "district" | "ward" | "detail"> & { isDefault?: boolean };
@@ -67,6 +84,9 @@ async function request<T>(path: string, options: RequestInit = {}) {
 
 export const profileApi = {
   me: () => request<CustomerProfile>("/auth/me"),
+  notifications: () => request<{ unreadCount: number; items: UserNotification[] }>("/notifications/me"),
+  markNotificationRead: (id: number) => request<void>(`/notifications/${id}/read`, { method: "PATCH" }),
+  markAllNotificationsRead: () => request<void>("/notifications/read-all", { method: "PATCH" }),
   updateProfile: (payload: { fullName?: string; phone?: string | null }) => request<AdminUser>("/auth/me", { method: "PATCH", body: JSON.stringify(payload) }),
   changePassword: (payload: { currentPassword: string; newPassword: string; confirmPassword: string }) => request<void>("/auth/me/password", { method: "PATCH", body: JSON.stringify(payload) }),
   createAddress: (payload: AddressPayload) => request<ProfileAddress>("/auth/me/addresses", { method: "POST", body: JSON.stringify(payload) }),

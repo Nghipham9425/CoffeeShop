@@ -1,8 +1,10 @@
-import { Clock3, Leaf, LogIn, LogOut, MapPin, Menu, Package, PackageSearch, Phone, ShoppingCart, UserRound } from "lucide-react";
+import { Bell, CheckCheck, Clock3, Leaf, LogIn, LogOut, MapPin, Menu, Package, PackageSearch, Phone, ShoppingCart, UserRound } from "lucide-react";
 import { FaFacebookF, FaInstagram, FaTiktok, FaYoutube } from "react-icons/fa";
 import { NavLink, Outlet } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { useCart } from "../contexts/CartContext";
 import { adminAuth } from "../lib/adminApi";
+import { profileApi, type UserNotification } from "../lib/profileApi";
 // Nhúng CustomerChatbot vào Layout công cộng
 import CustomerChatbot from "../components/Chatbot/CustomerChatbot";
 
@@ -23,6 +25,49 @@ const socials = [
 export function PublicLayout() {
   const { itemCount } = useCart();
   const user = adminAuth.getUser();
+  const [notifications, setNotifications] = useState<UserNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) {
+      setNotifications([]);
+      setUnreadCount(0);
+      return;
+    }
+
+    let alive = true;
+    const loadNotifications = async () => {
+      try {
+        const result = await profileApi.notifications();
+        if (!alive) return;
+        setNotifications(result.items);
+        setUnreadCount(result.unreadCount);
+      } catch {
+        // Notification failures must not affect the public storefront.
+      }
+    };
+    void loadNotifications();
+    const timer = window.setInterval(loadNotifications, 60_000);
+    return () => { alive = false; window.clearInterval(timer); };
+  }, [user?.id]);
+
+  async function markNotificationRead(notification: UserNotification) {
+    if (!notification.isRead) {
+      try {
+        await profileApi.markNotificationRead(notification.id);
+        setNotifications((current) => current.map((item) => item.id === notification.id ? { ...item, isRead: true } : item));
+        setUnreadCount((current) => Math.max(0, current - 1));
+      } catch { /* Link navigation still works if marking is unavailable. */ }
+    }
+  }
+
+  async function markAllNotificationsRead() {
+    try {
+      await profileApi.markAllNotificationsRead();
+      setNotifications((current) => current.map((item) => ({ ...item, isRead: true })));
+      setUnreadCount(0);
+    } catch { /* Keep current state when the request fails. */ }
+  }
 
   return (
     <div className="min-h-screen bg-white text-[var(--ink)]">
@@ -69,6 +114,28 @@ export function PublicLayout() {
             </button>
 
             <div className="ml-auto flex items-center gap-3 text-stone-950">
+              {user ? (
+                <div className="group relative hidden md:block">
+                  <button type="button" aria-label="Thông báo" className="relative grid h-10 w-10 place-items-center rounded-full border border-stone-200 transition-colors hover:bg-stone-100">
+                    <Bell size={19} />
+                    {unreadCount ? <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-[var(--coffee)] px-1 text-[10px] font-black text-white">{unreadCount > 9 ? "9+" : unreadCount}</span> : null}
+                  </button>
+                  <div className="invisible absolute right-0 top-full z-30 mt-2 w-96 translate-y-1 rounded-xl border border-stone-200 bg-white p-2 opacity-0 shadow-xl transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                    <div className="flex items-center justify-between px-3 py-2">
+                      <p className="font-black text-stone-950">Thông báo</p>
+                      {unreadCount ? <button type="button" onClick={() => void markAllNotificationsRead()} className="flex items-center gap-1 text-xs font-bold text-[var(--coffee)] hover:underline"><CheckCheck size={14} /> Đã đọc tất cả</button> : null}
+                    </div>
+                    <div className="max-h-80 overflow-y-auto border-t border-stone-100">
+                      {notifications.length ? notifications.map((notification) => (
+                        <NavLink key={notification.id} to={notification.link ?? "/tai-khoan/don-hang"} onClick={() => void markNotificationRead(notification)} className={`block border-b border-stone-100 px-3 py-3 transition-colors hover:bg-stone-50 ${notification.isRead ? "" : "bg-[#fff8f1]"}`}>
+                          <p className="text-sm font-black text-stone-950">{notification.title}</p>
+                          <p className="mt-1 text-xs leading-5 text-stone-600">{notification.content}</p>
+                        </NavLink>
+                      )) : <p className="px-3 py-7 text-center text-sm font-medium text-stone-500">Chưa có thông báo mới.</p>}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
               {user ? (
                 <div className="group relative hidden md:block">
                   <NavLink

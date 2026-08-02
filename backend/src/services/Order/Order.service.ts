@@ -1,5 +1,6 @@
 import { OrderStatus, PaymentMethod, PaymentStatus, Prisma, ShipmentStatus } from "@prisma/client";
 import { orderData } from "../../data/Order/Order.data.js";
+import { notificationService } from "../Notification/Notification.service.js";
 import type {
   CheckoutInput,
   OrderQueryInput,
@@ -89,7 +90,13 @@ export const orderService = {
     const orderCode = `PT${Date.now().toString().slice(-8)}${Math.floor(Math.random() * 90 + 10)}`;
 
     try {
-      return mapOrder(await orderData.checkout({ ...input, orderCode, userId }));
+      const created = await orderData.checkout({ ...input, orderCode, userId });
+      const result = mapOrder(created);
+
+      void notificationService.createOrderCreated(created.userId, created.orderCode, created.id).catch(() => undefined);
+      void notificationService.createNewOrderForStaff(created.orderCode, created.id).catch(() => undefined);
+
+      return result;
     } catch (error) {
       if (error instanceof Error && error.message.startsWith("INSUFFICIENT_STOCK:")) {
         const productName = error.message.replace("INSUFFICIENT_STOCK:", "");
@@ -238,7 +245,19 @@ export const orderService = {
     if (input.status === OrderStatus.COMPLETED && payment?.method === PaymentMethod.COD && payment.status === PaymentStatus.PENDING) {
       await orderData.updatePaymentStatus(payment.id, { status: PaymentStatus.PAID });
     }
-    return mapOrder(updated);
+    const result = mapOrder(updated);
+    const statusLabels: Record<OrderStatus, string> = {
+      PENDING: "Chờ xác nhận",
+      CONFIRMED: "Đã xác nhận",
+      PACKING: "Đang đóng gói",
+      SHIPPING: "Đang giao hàng",
+      COMPLETED: "Hoàn thành",
+      CANCELLED: "Đã hủy",
+    };
+    void notificationService
+      .createOrderStatusChanged(updated.userId, updated.orderCode, updated.id, statusLabels[input.status])
+      .catch(() => undefined);
+    return result;
   },
 
   async updatePaymentStatus(id: number, input: UpdatePaymentStatusInput) {

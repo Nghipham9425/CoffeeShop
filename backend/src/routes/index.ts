@@ -16,6 +16,7 @@ import promotionRoutes from "./Promotion/Promotion.routes.js";
 import chatbotRoutes from './Chatbot/Chatbot.routes.js';
 import { reviewRoutes } from "./Review/Review.routes.js";
 import { uploadRoutes } from "./Upload/Upload.routes.js";
+import { notificationRoutes } from "./Notification/Notification.routes.js";
 
 export const apiRoutes = Router();
 
@@ -35,3 +36,4 @@ apiRoutes.use("/promotions", promotionRoutes);
 apiRoutes.use("/chatbot", chatbotRoutes);
 apiRoutes.use("/reviews", reviewRoutes);
 apiRoutes.use("/uploads", uploadRoutes);
+apiRoutes.use("/notifications", notificationRoutes);
