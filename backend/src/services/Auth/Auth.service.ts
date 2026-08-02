@@ -133,8 +133,14 @@ export const authService = {
     const user = await userData.findProfileById(userId);
     if (!user) throw new Error("USER_NOT_FOUND");
 
-    const { _count, ...profile } = user;
-    return { ...profile, orderCount: _count.orders };
+    const { _count, loyaltyProfile, ...profile } = user;
+    return {
+      ...profile,
+      orderCount: _count.orders,
+      loyaltyProfile: loyaltyProfile
+        ? { ...loyaltyProfile, totalSpent: Number(loyaltyProfile.totalSpent) }
+        : null,
+    };
   },
 
   async updateProfile(userId: number, input: UpdateProfileInput) {

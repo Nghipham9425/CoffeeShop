@@ -46,6 +46,15 @@ const CustomerChatbot = () => {
     return '';
   };
 
+  const getChatHeaders = () => {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const token = getAuthToken();
+    const guestToken = localStorage.getItem('customer_chatbot_guest_token');
+    if (token) headers.Authorization = `Bearer ${token}`;
+    else if (guestToken) headers['X-Chat-Session'] = guestToken;
+    return headers;
+  };
+
   // Kiểm tra trạng thái đăng nhập khi mở khung chat
   useEffect(() => {
     const token = getAuthToken();
@@ -71,9 +80,7 @@ const CustomerChatbot = () => {
 
   const loadHistory = async (convId: number) => {
     try {
-      const token = getAuthToken();
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const headers = getChatHeaders();
 
       const res = await fetch(`http://localhost:4000/api/chatbot/${convId}/history`, { headers });
       const json = await res.json();
@@ -114,10 +121,9 @@ const CustomerChatbot = () => {
     if (!window.confirm("Bạn có muốn xóa cuộc trò chuyện này không?")) return;
 
     try {
-      const token = getAuthToken();
       const res = await fetch(`http://localhost:4000/api/chatbot/${id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: getChatHeaders()
       });
       const json = await res.json();
 
@@ -150,8 +156,7 @@ const CustomerChatbot = () => {
 
     try {
       const token = getAuthToken();
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
+      let headers = getChatHeaders();
 
       let activeConvId = conversationId;
 
@@ -165,9 +170,11 @@ const CustomerChatbot = () => {
         const startJson = await startRes.json();
         
         if (startJson.success && startJson.data?.id) {
+          if (startJson.guestToken) localStorage.setItem('customer_chatbot_guest_token', startJson.guestToken);
           activeConvId = Number(startJson.data.id);
           setConversationId(activeConvId);
           localStorage.setItem('customer_chatbot_conv_id', activeConvId.toString());
+          headers = getChatHeaders();
         } else {
           throw new Error("Không thể khởi tạo kết nối AI");
         }

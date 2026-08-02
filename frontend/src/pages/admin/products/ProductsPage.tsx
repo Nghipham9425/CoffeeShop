@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Edit3, Eye, EyeOff, PackagePlus, RotateCw, X } from "lucide-react";
+import { Edit3, Eye, EyeOff, ImageUp, PackagePlus, RotateCw, X } from "lucide-react";
 import { AdminPanel } from "../../../components/admin/AdminPanel";
 import { Button } from "../../../components/ui/button";
 import { useAdminOutlet } from "../../../layouts/AdminLayout";
@@ -38,6 +38,7 @@ export function ProductsPage() {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [error, setError] = useState("");
 
   const formTitle = useMemo(() => (editingId ? "Cập nhật sản phẩm" : "Thêm sản phẩm"), [editingId]);
@@ -93,6 +94,7 @@ export function ProductsPage() {
 
   function closeForm() {
     setForm(emptyProductForm);
+    setImageFile(null);
     setEditingId(null);
     setShowForm(false);
   }
@@ -104,6 +106,13 @@ export function ProductsPage() {
     setSaving(true);
     setError("");
 
+    let imageUrl = form.imageUrl?.trim() || undefined;
+
+    try {
+      if (imageFile) {
+        imageUrl = (await adminApi.uploadProductImage(token, imageFile)).url;
+      }
+
     const payload: ProductPayload = {
       categoryId: Number(form.categoryId),
       name: form.name.trim(),
@@ -111,7 +120,7 @@ export function ProductsPage() {
       unit: form.unit?.trim() || "kg",
       price: Number(form.price ?? 0),
       minimumOrderKg: Number(form.minimumOrderKg ?? 1),
-      imageUrl: form.imageUrl?.trim() || undefined,
+      imageUrl,
       isRetail: form.isRetail,
       isB2b: form.isB2b,
     };
@@ -128,7 +137,6 @@ export function ProductsPage() {
       return;
     }
 
-    try {
       if (editingId) {
         await adminApi.updateProduct(token, editingId, payload);
       } else {
@@ -208,6 +216,14 @@ export function ProductsPage() {
               URL hình ảnh
               <input className={inputClass} value={form.imageUrl} onChange={(event) => setForm((current) => ({ ...current, imageUrl: event.target.value }))} />
             </label>
+            <label className={`${labelClass} md:col-span-2`}>
+              Tải ảnh từ máy tính (Cloudinary, tối đa 5 MB)
+              <span className="flex flex-wrap items-center gap-3">
+                <input type="file" accept="image/*" className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-[#E8D3C7] file:px-3 file:py-2 file:font-bold file:text-[#553B2F]" onChange={(event) => setImageFile(event.target.files?.[0] ?? null)} />
+                {imageFile ? <span className="flex items-center gap-1 text-xs text-[#553B2F]"><ImageUp size={14} /> {imageFile.name}</span> : null}
+              </span>
+            </label>
+            {form.imageUrl ? <div className="md:col-span-2"><img src={form.imageUrl} alt="Xem trước ảnh sản phẩm" className="h-32 w-32 rounded-lg border border-[#C7A792] object-cover" /></div> : null}
             <label className={`${labelClass} md:col-span-2`}>
               Mô tả
               <textarea className="min-h-24 rounded-lg border border-[#C7A792] px-3 py-2 outline-none focus:border-[#553B2F]" value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} />

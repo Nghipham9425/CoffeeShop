@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { CheckCircle2, CircleX, CreditCard, Eye, PackageCheck, RefreshCw, Truck, X } from "lucide-react";
 import { AdminPanel } from "../../../components/admin/AdminPanel";
 import { AdminStatusBadge } from "../../../components/admin/AdminStatusBadge";
@@ -31,6 +32,7 @@ const nextShipmentStep: Partial<Record<NonNullable<AdminOrder["shipment"]>["stat
 
 export function OrdersPage() {
   const { token, sessionVersion } = useAdminOutlet();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [keyword, setKeyword] = useState("");
   const [activeColumn, setActiveColumn] = useState<AdminOrder["status"]>("PENDING");
@@ -207,7 +209,7 @@ export function OrdersPage() {
                   <OrderSummaryCard
                     key={order.id}
                     order={order}
-                    onViewDetails={() => setSelectedOrder(order)}
+                    onViewDetails={() => navigate(`/admin/don-hang/${order.id}`)}
                   />
                 ))}
               </div>

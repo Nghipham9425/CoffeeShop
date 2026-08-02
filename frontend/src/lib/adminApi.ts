@@ -153,13 +153,13 @@ export type AdminReview = {
 };
 
 export type AdminInventory = {
-  id: number;
   productId: number;
   productName: string;
   categoryName: string;
   quantity: number;
   minQuantity: number;
   warehouse: string;
+  unit: "kg";
   isLowStock: boolean;
   updatedAt: string;
 };
@@ -359,6 +359,21 @@ export const adminAuth = {
 };
 
 export const adminApi = {
+  async uploadProductImage(token: string, image: File) {
+    const formData = new FormData();
+    formData.append("image", image);
+    const response = await fetch(`${API_BASE_URL}/uploads/products`, {
+      method: "POST",
+      headers: authHeaders(token),
+      body: formData,
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      throw new Error(body?.message || `Không thể tải ảnh lên (HTTP ${response.status}).`);
+    }
+    return (await response.json()) as { url: string; publicId: string };
+  },
+
   login(email: string, password: string) {
     return request<LoginResponse>("/auth/login", {
       method: "POST",
@@ -470,6 +485,12 @@ export const adminApi = {
     });
   },
 
+  quoteRequest(token: string, id: number) {
+    return request<QuoteRequest>(`/quote-requests/${id}`, {
+      headers: authHeaders(token),
+    });
+  },
+
   updateQuoteStatus(token: string, id: number, status: QuoteRequest["status"]) {
     return request<QuoteRequest>(`/quote-requests/${id}/status`, {
       method: "PATCH",
@@ -513,6 +534,12 @@ export const adminApi = {
     });
   },
 
+  order(token: string, id: number) {
+    return request<AdminOrder>(`/orders/${id}`, {
+      headers: authHeaders(token),
+    });
+  },
+
   updateOrderStatus(token: string, id: number, payload: { status: AdminOrder["status"]; cancelReason?: string; refundAmount?: number }) {
     return request<AdminOrder>(`/orders/${id}/status`, {
       method: "PATCH",
@@ -543,15 +570,15 @@ export const adminApi = {
     });
   },
 
-  updateInventory(token: string, id: number, payload: Partial<Pick<AdminInventory, "quantity" | "minQuantity" | "warehouse">>) {
-    return request<AdminInventory>(`/inventories/${id}`, {
+  updateInventory(token: string, productId: number, payload: Pick<AdminInventory, "minQuantity">) {
+    return request<AdminInventory>(`/inventories/${productId}/threshold`, {
       method: "PATCH",
       headers: authHeaders(token),
       body: JSON.stringify(payload),
     });
   },
 
-  createStockMovement(token: string, payload: { productId: number; type: "IMPORT" | "EXPORT" | "ADJUSTMENT" | "RETURN"; quantity: number; reason?: string; reference?: string; warehouse?: string }) {
+  createStockMovement(token: string, payload: { productId: number; type: "IMPORT" | "EXPORT" | "ADJUSTMENT"; quantity: number; reason: string; reference?: string }) {
     return request<{ inventory: AdminInventory }>("/inventories/movements", {
       method: "POST",
       headers: authHeaders(token),
@@ -559,7 +586,7 @@ export const adminApi = {
     });
   },
 
-  stockMovements(token: string, params: { productId?: number; warehouse?: string; type?: StockMovement["type"] } = {}) {
+  stockMovements(token: string, params: { productId?: number; type?: StockMovement["type"] } = {}) {
     return request<StockMovement[]>(`/inventories/movements${buildQuery(params)}`, { headers: authHeaders(token) });
   },
 

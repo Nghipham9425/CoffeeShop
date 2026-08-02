@@ -404,10 +404,6 @@ async function main() {
     },
   });
 
-  await prisma.inventory.deleteMany({
-    where: { warehouse: "Kho thanh pham" },
-  });
-
   await prisma.inventory.upsert({
     where: { productId_warehouse: { productId: robusta.id, warehouse: "Kho thành phẩm" } },
     update: { quantity: 120, minQuantity: 20 },

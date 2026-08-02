@@ -9,5 +9,5 @@ export const inventoryRoutes = Router();
 inventoryRoutes.use(authMiddleware, authorizeRoles(UserRole.ADMIN, UserRole.WAREHOUSE, UserRole.SALES));
 inventoryRoutes.get("/", asyncHandler(inventoryController.getInventories));
 inventoryRoutes.get("/movements", asyncHandler(inventoryController.getStockMovements));
-inventoryRoutes.patch("/:id", asyncHandler(inventoryController.updateInventory));
+inventoryRoutes.patch("/:productId/threshold", asyncHandler(inventoryController.updateThreshold));
 inventoryRoutes.post("/movements", asyncHandler(inventoryController.createStockMovement));

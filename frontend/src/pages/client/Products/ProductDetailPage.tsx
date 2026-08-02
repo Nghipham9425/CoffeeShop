@@ -111,7 +111,7 @@ export function ProductDetailPage() {
 
             <div className="mt-7 grid gap-4 rounded-3xl bg-white p-6 shadow-sm md:grid-cols-3">
               <Info icon={Package} label="Đơn vị" value={product.unit} />
-              <Info icon={Truck} label="MOQ" value={`${product.minimumOrderKg}kg`} />
+              <Info icon={Truck} label={product.isB2b ? "MOQ B2B" : "Tối thiểu"} value={`${product.isB2b ? product.minimumOrderKg : 1} kg`} />
               <Info icon={CheckCircle2} label="Kênh bán" value={[product.isRetail ? "B2C" : "", product.isB2b ? "B2B" : ""].filter(Boolean).join(" / ")} />
             </div>
 

@@ -153,7 +153,9 @@ export const orderService = {
       REJECTED: [], COMPLETED: [], CANCELLED: [],
     };
     if (!transitions[current.status]?.includes(input.status)) throw new Error("INVALID_RETURN_STATUS_TRANSITION");
-    return orderData.updateReturnRequest(id, input);
+    return input.status === "COMPLETED"
+      ? orderData.completeReturnRequest(id, input)
+      : orderData.updateReturnRequest(id, input);
   },
 
   async getOrderById(id: number) {
@@ -176,10 +178,9 @@ export const orderService = {
     };
   },
 
-  async trackOrder(trackingCode: string) {
-    const shipment = await orderData.findTrackingOrder(trackingCode.trim().toUpperCase());
-    if (!shipment) return null;
-    const order = shipment.order;
+  async trackOrder(code: string) {
+    const order = await orderData.findTrackableOrder(code.trim().toUpperCase());
+    if (!order) return null;
 
     return {
       id: order.id,
@@ -189,13 +190,7 @@ export const orderService = {
       createdAt: order.createdAt,
       items: order.items.map((item) => ({ id: item.id, productName: item.product.name, unit: item.product.unit, quantity: item.quantity })),
       payment: order.payments[0] ?? null,
-      shipment: {
-        status: shipment.status,
-        carrier: shipment.carrier,
-        trackingCode: shipment.trackingCode,
-        shippedAt: shipment.shippedAt,
-        deliveredAt: shipment.deliveredAt,
-      },
+      shipment: order.shipment,
     };
   },
 
@@ -235,7 +230,9 @@ export const orderService = {
 
     const updated = input.status === OrderStatus.CANCELLED
       ? await orderData.cancelAdminOrder(id, input)
-      : await orderData.updateStatus(id, input);
+      : input.status === OrderStatus.COMPLETED
+        ? await orderData.completeB2cOrder(id, input)
+        : await orderData.updateStatus(id, input);
 
     // COD is collected after successful delivery, not while the order is new.
     if (input.status === OrderStatus.COMPLETED && payment?.method === PaymentMethod.COD && payment.status === PaymentStatus.PENDING) {
@@ -267,6 +264,19 @@ export const orderService = {
     const order = await orderData.findById(orderId);
     if (!order) throw new Error("ORDER_NOT_FOUND");
 
-    return mapShipment(await orderData.upsertShipment(orderId, input));
+    const currentStatus = order.shipment?.status ?? ShipmentStatus.WAITING;
+    const nextStatus = input.status ?? currentStatus;
+    const allowedTransitions: Record<ShipmentStatus, ShipmentStatus[]> = {
+      [ShipmentStatus.WAITING]: [ShipmentStatus.WAITING, ShipmentStatus.PACKED],
+      [ShipmentStatus.PACKED]: [ShipmentStatus.PACKED, ShipmentStatus.SHIPPED],
+      [ShipmentStatus.SHIPPED]: [ShipmentStatus.SHIPPED, ShipmentStatus.DELIVERED, ShipmentStatus.RETURNED],
+      [ShipmentStatus.DELIVERED]: [ShipmentStatus.DELIVERED],
+      [ShipmentStatus.RETURNED]: [ShipmentStatus.RETURNED],
+    };
+    if (!allowedTransitions[currentStatus].includes(nextStatus)) {
+      throw new Error("INVALID_SHIPMENT_STATUS_TRANSITION");
+    }
+
+    return mapShipment(await orderData.upsertShipment(orderId, { ...input, status: nextStatus }));
   },
 };

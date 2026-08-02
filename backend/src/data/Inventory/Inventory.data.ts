@@ -1,70 +1,53 @@
-import type { Prisma } from "@prisma/client";
 import { prisma } from "../prisma.js";
 import type {
   CreateStockMovementInput,
   InventoryQueryInput,
   StockMovementQueryInput,
-  UpdateInventoryInput,
+  UpdateInventoryThresholdInput,
 } from "../../validators/Inventory/Inventory.validator.js";
 
-const inventoryInclude = {
-  product: { include: { category: true } },
-} satisfies Prisma.InventoryInclude;
-
-function buildWhere(query: InventoryQueryInput): Prisma.InventoryWhereInput {
-  return {
-    product: query.keyword
-      ? {
-          OR: [
-            { name: { contains: query.keyword, mode: "insensitive" } },
-            { slug: { contains: query.keyword, mode: "insensitive" } },
-          ],
-        }
-      : undefined,
-  };
-}
+const warehouse = "Kho thành phẩm";
 
 export const inventoryData = {
-  findMany(query: InventoryQueryInput) {
-    return prisma.inventory.findMany({
-      where: buildWhere(query),
-      include: inventoryInclude,
-      orderBy: [{ quantity: "asc" }, { updatedAt: "desc" }],
+  findProductOverview(query: InventoryQueryInput) {
+    return prisma.product.findMany({
+      where: {
+        isActive: true,
+        isRetail: true,
+        OR: query.keyword
+          ? [
+              { name: { contains: query.keyword, mode: "insensitive" } },
+              { slug: { contains: query.keyword, mode: "insensitive" } },
+            ]
+          : undefined,
+      },
+      include: {
+        category: { select: { name: true } },
+        inventories: { where: { warehouse }, take: 1 },
+      },
+      orderBy: { name: "asc" },
     });
   },
 
-  findById(id: number) {
-    return prisma.inventory.findUnique({ where: { id }, include: inventoryInclude });
+  findProduct(productId: number) {
+    return prisma.product.findFirst({
+      where: { id: productId, isActive: true },
+      select: { id: true, name: true },
+    });
   },
 
-  update(id: number, input: UpdateInventoryInput) {
-    return prisma.$transaction(async (tx) => {
-      const current = await tx.inventory.findUniqueOrThrow({ where: { id } });
-      const updated = await tx.inventory.update({ where: { id }, data: input, include: inventoryInclude });
-
-      if (input.quantity !== undefined && input.quantity !== current.quantity) {
-        await tx.stockMovement.create({
-          data: {
-            productId: current.productId,
-            type: "ADJUSTMENT",
-            quantity: Math.abs(input.quantity - current.quantity),
-            warehouse: current.warehouse,
-            balanceAfter: input.quantity,
-            reason: "Điều chỉnh tồn trực tiếp",
-          },
-        });
-      }
-      return updated;
+  setThreshold(productId: number, input: UpdateInventoryThresholdInput) {
+    return prisma.inventory.upsert({
+      where: { productId_warehouse: { productId, warehouse } },
+      create: { productId, warehouse, quantity: 0, minQuantity: input.minQuantity },
+      update: { minQuantity: input.minQuantity },
+      include: { product: { include: { category: true } } },
     });
   },
 
   findMovements(query: StockMovementQueryInput) {
     return prisma.stockMovement.findMany({
-      where: {
-        productId: query.productId,
-        warehouse: query.warehouse || undefined,
-        type: query.type,
-      },
+      where: { productId: query.productId, type: query.type, warehouse },
       include: { product: { select: { id: true, name: true } } },
       orderBy: { createdAt: "desc" },
       take: 500,
@@ -75,51 +58,41 @@ export const inventoryData = {
     return prisma.$transaction(async (tx) => {
       const product = await tx.product.findFirst({
         where: { id: input.productId, isActive: true },
-        select: { id: true },
+        select: { id: true, name: true },
       });
       if (!product) throw new Error("PRODUCT_NOT_FOUND");
 
-      const current = await tx.inventory.findUnique({
-        where: { productId_warehouse: { productId: input.productId, warehouse: input.warehouse } },
+      const current = await tx.inventory.upsert({
+        where: { productId_warehouse: { productId: input.productId, warehouse } },
+        create: { productId: input.productId, warehouse, quantity: 0, minQuantity: 0 },
+        update: {},
       });
-      const currentQuantity = current?.quantity ?? 0;
-      let nextQuantity = currentQuantity;
-      let movementQuantity = input.quantity;
+      const nextQuantity = input.type === "IMPORT"
+        ? current.quantity + input.quantity
+        : input.type === "EXPORT"
+          ? current.quantity - input.quantity
+          : input.quantity;
 
-      if (input.type === "EXPORT") {
-        if (currentQuantity < input.quantity) throw new Error("INSUFFICIENT_STOCK");
-        nextQuantity = currentQuantity - input.quantity;
-      } else if (input.type === "ADJUSTMENT") {
-        nextQuantity = input.quantity;
-        movementQuantity = Math.abs(nextQuantity - currentQuantity);
-        if (movementQuantity === 0) throw new Error("STOCK_UNCHANGED");
-      } else {
-        nextQuantity = currentQuantity + input.quantity;
-      }
+      if (input.type === "EXPORT" && nextQuantity < 0) throw new Error("INSUFFICIENT_STOCK");
+      if (input.type === "ADJUSTMENT" && nextQuantity === current.quantity) throw new Error("STOCK_UNCHANGED");
 
-      const inventory = await tx.inventory.upsert({
-        where: { productId_warehouse: { productId: input.productId, warehouse: input.warehouse } },
-        create: {
-          productId: input.productId,
-          warehouse: input.warehouse,
-          quantity: nextQuantity,
-          minQuantity: 0,
-        },
-        update: { quantity: nextQuantity },
-        include: inventoryInclude,
+      const inventory = await tx.inventory.update({
+        where: { id: current.id },
+        data: { quantity: nextQuantity },
+        include: { product: { include: { category: true } } },
       });
-
       const movement = await tx.stockMovement.create({
         data: {
           productId: input.productId,
           type: input.type,
-          quantity: movementQuantity,
-          warehouse: input.warehouse,
+          quantity: input.type === "ADJUSTMENT" ? Math.abs(nextQuantity - current.quantity) : input.quantity,
+          warehouse,
           balanceAfter: nextQuantity,
           reason: input.reason,
           reference: input.reference,
         },
       });
+
       return { movement, inventory };
     });
   },

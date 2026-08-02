@@ -169,10 +169,11 @@ export const publicApi = {
     });
   },
 
-  initializeSepay(orderId: number) {
+  initializeSepay(orderId: number, orderCode: string, token?: string | null) {
     return request<SepayCheckoutSession>("/payments/sepay/checkout", {
       method: "POST",
-      body: JSON.stringify({ orderId }),
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: JSON.stringify({ orderId, orderCode }),
     });
   },
 
@@ -180,8 +181,8 @@ export const publicApi = {
     return request<PublicPaymentStatus>(`/orders/${orderId}/payment-status?orderCode=${encodeURIComponent(orderCode)}`);
   },
 
-  trackOrder(trackingCode: string) {
-    return request<TrackedOrder>(`/orders/track?trackingCode=${encodeURIComponent(trackingCode)}`);
+  trackOrder(code: string) {
+    return request<TrackedOrder>(`/orders/track?code=${encodeURIComponent(code)}`);
   },
 
   createQuoteRequest(payload: QuoteRequestPayload) {

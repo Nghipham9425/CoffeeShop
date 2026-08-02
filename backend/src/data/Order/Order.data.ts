@@ -14,7 +14,7 @@ import { PromotionService } from "../../services/Promotion/Promotion.service.js"
 const orderInclude = {
   user: { select: { id: true, fullName: true, email: true, phone: true } },
   promotion: true,
-  items: { include: { product: { select: { id: true, name: true, unit: true } } } },
+  items: { include: { product: { select: { id: true, name: true, unit: true } }, allocations: true } },
   payments: true,
   shipment: true,
 } satisfies Prisma.OrderInclude;
@@ -57,16 +57,37 @@ export const orderData = {
     return prisma.$transaction(async (tx) => {
       const order = await tx.order.findFirst({
         where: { id, userId, status: "PENDING" },
-        include: { items: true, payments: true },
+        include: { items: { include: { allocations: { include: { inventory: true } } } }, payments: true },
       });
       if (!order) throw new Error("ORDER_NOT_CANCELLABLE");
       if (order.payments.some((payment) => payment.status === "PAID")) throw new Error("PAID_ORDER_REQUIRES_REFUND_REQUEST");
 
       for (const item of order.items) {
+        if (item.allocations.length) {
+          for (const allocation of item.allocations) {
+            const inventory = await tx.inventory.update({
+              where: { id: allocation.inventoryId },
+              data: { quantity: { increment: allocation.quantity } },
+            });
+            await tx.stockMovement.create({
+              data: {
+                productId: item.productId,
+                type: "RETURN",
+                quantity: allocation.quantity,
+                warehouse: allocation.inventory.warehouse,
+                balanceAfter: inventory.quantity,
+                reason: "Hoàn kho do khách hủy đơn",
+                reference: order.orderCode,
+              },
+            });
+          }
+          continue;
+        }
         const inventory = await tx.inventory.findFirst({ where: { productId: item.productId }, orderBy: { quantity: "desc" } });
         if (inventory) {
-          await tx.inventory.update({ where: { id: inventory.id }, data: { quantity: { increment: item.quantity } } });
-          await tx.stockMovement.create({ data: { productId: item.productId, type: "RETURN", quantity: item.quantity, warehouse: inventory.warehouse, balanceAfter: inventory.quantity + item.quantity, reason: "Hoàn kho do khách hủy đơn", reference: order.orderCode } });
+          const quantity = item.quantity;
+          await tx.inventory.update({ where: { id: inventory.id }, data: { quantity: { increment: quantity } } });
+          await tx.stockMovement.create({ data: { productId: item.productId, type: "RETURN", quantity, warehouse: inventory.warehouse, balanceAfter: inventory.quantity + quantity, reason: "Hoàn kho do khách hủy đơn", reference: order.orderCode } });
         }
       }
 
@@ -80,11 +101,31 @@ export const orderData = {
     return prisma.$transaction(async (tx) => {
       const order = await tx.order.findFirst({
         where: { id, status: { in: ["PENDING", "CONFIRMED"] } },
-        include: { items: true },
+        include: { items: { include: { allocations: { include: { inventory: true } } } }, payments: true },
       });
       if (!order) throw new Error("ORDER_NOT_CANCELLABLE");
 
       for (const item of order.items) {
+        if (item.allocations.length) {
+          for (const allocation of item.allocations) {
+            const inventory = await tx.inventory.update({
+              where: { id: allocation.inventoryId },
+              data: { quantity: { increment: allocation.quantity } },
+            });
+            await tx.stockMovement.create({
+              data: {
+                productId: item.productId,
+                type: "RETURN",
+                quantity: allocation.quantity,
+                warehouse: allocation.inventory.warehouse,
+                balanceAfter: inventory.quantity,
+                reason: "Hoàn kho do quản trị viên hủy đơn",
+                reference: order.orderCode,
+              },
+            });
+          }
+          continue;
+        }
         const inventory = await tx.inventory.findFirst({
           where: { productId: item.productId },
           orderBy: { quantity: "desc" },
@@ -144,6 +185,67 @@ export const orderData = {
     return prisma.returnRequest.update({ where: { id }, data: input, include: { user: { select: { id: true, fullName: true, email: true, phone: true } }, order: { select: { id: true, orderCode: true, totalAmount: true, status: true } } } });
   },
 
+  async completeReturnRequest(id: number, input: UpdateReturnRequestInput) {
+    return prisma.$transaction(async (tx) => {
+      const request = await tx.returnRequest.findFirst({
+        where: { id, status: "APPROVED" },
+        include: {
+          order: {
+            include: {
+              items: { include: { allocations: { include: { inventory: true } } } },
+              payments: true,
+            },
+          },
+        },
+      });
+      if (!request) throw new Error("RETURN_REQUEST_NOT_APPROVED");
+
+      const completed = await tx.returnRequest.updateMany({
+        where: { id, status: "APPROVED" },
+        data: { status: "COMPLETED", resolutionNote: input.resolutionNote, processedAt: new Date() },
+      });
+      if (completed.count !== 1) throw new Error("RETURN_REQUEST_ALREADY_PROCESSED");
+
+      if (request.type === "RETURN") {
+        for (const item of request.order.items) {
+          for (const allocation of item.allocations) {
+            const inventory = await tx.inventory.update({
+              where: { id: allocation.inventoryId },
+              data: { quantity: { increment: allocation.quantity } },
+            });
+            await tx.stockMovement.create({
+              data: {
+                productId: item.productId,
+                type: "RETURN",
+                quantity: allocation.quantity,
+                warehouse: allocation.inventory.warehouse,
+                balanceAfter: inventory.quantity,
+                reason: "Hoàn kho theo yêu cầu trả hàng",
+                reference: request.order.orderCode,
+              },
+            });
+          }
+        }
+      }
+
+      if (request.type === "RETURN" || request.type === "REFUND") {
+        await tx.payment.updateMany({
+          where: { orderId: request.orderId, status: "PAID" },
+          data: { status: "REFUNDED" },
+        });
+        await tx.order.update({
+          where: { id: request.orderId },
+          data: { refundAmount: request.order.totalAmount },
+        });
+      }
+
+      return tx.returnRequest.findUniqueOrThrow({
+        where: { id },
+        include: { user: { select: { id: true, fullName: true, email: true, phone: true } }, order: { select: { id: true, orderCode: true, totalAmount: true, status: true } } },
+      });
+    });
+  },
+
   findPaymentStatus(id: number, orderCode: string) {
     return prisma.order.findFirst({
       where: { id, orderCode },
@@ -160,26 +262,23 @@ export const orderData = {
     });
   },
 
-  findTrackingOrder(trackingCode: string) {
-    return prisma.shipment.findFirst({
-      where: { trackingCode },
+  findTrackableOrder(code: string) {
+    return prisma.order.findFirst({
+      where: {
+        OR: [
+          { orderCode: { equals: code, mode: "insensitive" } },
+          { shipment: { is: { trackingCode: { equals: code, mode: "insensitive" } } } },
+        ],
+      },
       select: {
+        id: true,
+        orderCode: true,
         status: true,
-        carrier: true,
-        trackingCode: true,
-        shippedAt: true,
-        deliveredAt: true,
-        order: {
-          select: {
-            id: true,
-            orderCode: true,
-            status: true,
-            totalAmount: true,
-            createdAt: true,
-            items: { select: { id: true, quantity: true, product: { select: { name: true, unit: true } } } },
-            payments: { select: { method: true, status: true, paidAt: true }, orderBy: { id: "asc" }, take: 1 },
-          },
-        },
+        totalAmount: true,
+        createdAt: true,
+        items: { select: { id: true, quantity: true, product: { select: { name: true, unit: true } } } },
+        payments: { select: { method: true, status: true, paidAt: true }, orderBy: { id: "asc" }, take: 1 },
+        shipment: { select: { status: true, carrier: true, trackingCode: true, shippedAt: true, deliveredAt: true } },
       },
     });
   },
@@ -193,6 +292,30 @@ export const orderData = {
         refundAmount: input.refundAmount,
       },
       include: orderInclude,
+    });
+  },
+
+  async completeB2cOrder(id: number, input: UpdateOrderStatusInput) {
+    return prisma.$transaction(async (tx) => {
+      const order = await tx.order.update({
+        where: { id },
+        data: { status: input.status, cancelReason: input.cancelReason, refundAmount: input.refundAmount },
+        include: orderInclude,
+      });
+      if (order.channel === "B2C" && order.userId) {
+        const existing = await tx.loyaltyProfile.findUnique({ where: { userId: order.userId } });
+        const totalSpent = Number(existing?.totalSpent ?? 0) + Number(order.totalAmount);
+        const points = (existing?.points ?? 0) + Math.floor(Number(order.totalAmount) / 10_000);
+        const tier = totalSpent >= 30_000_000 ? "VIP"
+          : totalSpent >= 10_000_000 ? "GOLD"
+            : totalSpent >= 3_000_000 ? "SILVER" : "REGULAR";
+        await tx.loyaltyProfile.upsert({
+          where: { userId: order.userId },
+          create: { userId: order.userId, totalSpent: order.totalAmount, points: Math.floor(Number(order.totalAmount) / 10_000), orderCount: 1, tier, lastPurchaseAt: new Date() },
+          update: { totalSpent, points, orderCount: { increment: 1 }, tier, lastPurchaseAt: new Date() },
+        });
+      }
+      return order;
     });
   },
 
@@ -239,6 +362,7 @@ export const orderData = {
 
   async checkout(input: CheckoutInput & { orderCode: string; userId?: number }) {
     return prisma.$transaction(async (tx) => {
+      const now = new Date();
       const productIds = input.items.map((item) => item.productId);
       const products = await tx.product.findMany({
         where: {
@@ -252,6 +376,10 @@ export const orderData = {
             where: {
               isActive: true,
               priceType: "RETAIL",
+              AND: [
+                { OR: [{ startAt: null }, { startAt: { lte: now } }] },
+                { OR: [{ endAt: null }, { endAt: { gte: now } }] },
+              ],
             },
             orderBy: { minQuantity: "desc" },
           },
@@ -272,6 +400,7 @@ export const orderData = {
           throw new Error("PRODUCT_NOT_FOUND");
         }
 
+        const quantityGram = item.quantity * 1000;
         const totalStock = product.inventories.reduce((total, inventory) => total + inventory.quantity, 0);
         if (totalStock < item.quantity) {
           throw new Error(`INSUFFICIENT_STOCK:${product.name}`);
@@ -288,7 +417,7 @@ export const orderData = {
           .filter((allocation) => allocation.quantity > 0);
 
         const matchedPrice = product.prices.find((price) => price.minQuantity <= item.quantity);
-        const unitPrice = Number(matchedPrice?.price ?? product.price ?? 0);
+        const unitPrice = Number(matchedPrice?.price ?? 0);
 
         if (unitPrice <= 0) {
           throw new Error(`PRODUCT_PRICE_NOT_FOUND:${product.name}`);
@@ -301,6 +430,8 @@ export const orderData = {
           product,
           allocations,
           quantity: item.quantity,
+          quantityGram,
+          unitGram: 1000,
           unitPrice,
           lineTotal,
         });
@@ -329,6 +460,8 @@ export const orderData = {
             create: orderItems.map((item) => ({
               productId: item.product.id,
               quantity: item.quantity,
+              unitGram: item.unitGram,
+              quantityGram: item.quantityGram,
               unitPrice: item.unitPrice,
               lineTotal: item.lineTotal,
             })),
@@ -354,6 +487,8 @@ export const orderData = {
       });
 
       for (const item of orderItems) {
+        const orderItem = order.items.find((createdItem) => createdItem.productId === item.product.id);
+        if (!orderItem) throw new Error("ORDER_ITEM_NOT_FOUND");
         for (const allocation of item.allocations) {
           const stockUpdate = await tx.inventory.updateMany({
             where: {
@@ -375,6 +510,13 @@ export const orderData = {
               balanceAfter: allocation.inventory.quantity - allocation.quantity,
               reason: "Xuất kho theo đơn hàng B2C",
               reference: input.orderCode,
+            },
+          });
+          await tx.orderItemInventoryAllocation.create({
+            data: {
+              orderItemId: orderItem.id,
+              inventoryId: allocation.inventory.id,
+              quantity: allocation.quantity,
             },
           });
         }

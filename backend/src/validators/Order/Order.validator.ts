@@ -42,7 +42,7 @@ export const checkoutSchema = z.object({
     .or(z.literal("")),
   address: z.string().trim().min(8, "Vui lòng nhập địa chỉ giao hàng"),
   note: z.string().trim().optional(),
-  paymentMethod: z.nativeEnum(PaymentMethod).default(PaymentMethod.COD),
+  paymentMethod: z.enum([PaymentMethod.COD, PaymentMethod.BANK_TRANSFER, PaymentMethod.SEPAY]).default(PaymentMethod.COD),
   shippingFee: z.coerce.number().min(0).default(25000),
   voucherCode: z.string().trim().max(50).optional(),
   items: z

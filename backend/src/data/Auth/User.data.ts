@@ -57,6 +57,7 @@ export const userData = {
             fullName: input.fullName,
             email: input.email.toLowerCase(),
             passwordHash: input.passwordHash,
+            loyaltyProfile: { create: {} },
           },
           select: { id: true, fullName: true, email: true, phone: true, role: true, isActive: true },
         });
@@ -94,6 +95,7 @@ export const userData = {
         isActive: true,
         createdAt: true,
         addresses: { orderBy: [{ isDefault: "desc" }, { updatedAt: "desc" }] },
+        loyaltyProfile: true,
         _count: { select: { orders: true } },
       },
     });
@@ -220,7 +222,7 @@ export const userData = {
 
   create(data: { fullName: string; email: string; phone?: string; passwordHash: string }) {
     return prisma.user.create({
-      data,
+      data: { ...data, loyaltyProfile: { create: {} } },
       select: { id: true, fullName: true, email: true, phone: true, role: true, isActive: true },
     });
   },

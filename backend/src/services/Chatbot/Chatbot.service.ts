@@ -1,126 +1,79 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { ChatbotSender, type UserRole } from '@prisma/client';
-import { env } from '../../config/env.js';
-import { chatbotData } from '../../data/Chatbot/Chatbot.data.js';
-import { prisma } from '../../data/prisma.js';
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { ChatbotSender, type UserRole } from "@prisma/client";
+import { env } from "../../config/env.js";
+import { chatbotData } from "../../data/Chatbot/Chatbot.data.js";
+import { prisma } from "../../data/prisma.js";
 
 const genAI = new GoogleGenerativeAI(env.geminiApiKey);
 
 export class ChatbotService {
-  static async processMessage(
-    conversationId: number,
-    message: string,
-    role: UserRole,
-    userName: string = 'bạn'
-  ) {
-    const senderType = role === 'CUSTOMER' ? ChatbotSender.CUSTOMER : ChatbotSender.STAFF;
-
-    await chatbotData.saveMessage({
-      conversationId,
-      sender: senderType,
-      content: message,
-    });
+  static async processMessage(conversationId: number, message: string, role: UserRole, userName = "bạn") {
+    const sender = role === "CUSTOMER" ? ChatbotSender.CUSTOMER : ChatbotSender.STAFF;
+    await chatbotData.saveMessage({ conversationId, sender, content: message });
 
     const conversation = await chatbotData.getConversationById(conversationId);
-    if (!conversation) throw new Error('Không tìm thấy phiên chat');
+    if (!conversation) throw new Error("Không tìm thấy phiên trò chuyện.");
 
     if (conversation.messages.length === 1) {
       try {
-        const titleModel = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
-        const titleResult = await titleModel.generateContent(
-          `Tạo 1 tiêu đề thật ngắn gọn (khoảng 3-6 chữ) tóm tắt nội dung sau. KHÔNG dùng dấu ngoặc kép, KHÔNG dùng markdown. Nội dung: "${message}"`
-        );
-        const newTopic = titleResult.response.text().trim();
-        await chatbotData.updateTopic(conversationId, newTopic);
-      } catch (error) {
-        console.error("Lỗi khi AI tự động đặt tên:", error);
+        const titleModel = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+        const title = await titleModel.generateContent(`Tạo tiêu đề tiếng Việt 3-6 từ, không markdown, cho nội dung: ${message}`);
+        await chatbotData.updateTopic(conversationId, title.response.text().trim().slice(0, 100));
+      } catch {
+        // Tạo tiêu đề không được làm gián đoạn cuộc trò chuyện.
       }
     }
 
-    const history = conversation.messages.map((msg) => ({
-      role: msg.sender === ChatbotSender.BOT ? 'model' : 'user',
-      parts: [{ text: msg.content }],
-    }));
-
-    const previousMessages = history.slice(0, -1);
-
-    const noMarkdownRule = "Tuyệt đối KHÔNG sử dụng Markdown (không dùng dấu **, *, #, -). Trình bày bằng văn bản thuần túy, xuống dòng rõ ràng để dễ đọc.";
-
-    // LẤY DANH SÁCH SẢN PHẨM TRUYỀN VÀO CHO CẢ ADMIN LẪN KHÁCH HÀNG
+    const now = new Date();
     const products = await prisma.product.findMany({
-      where: { isRetail: true }, 
-      select: { id: true, name: true, price: true, description: true },
+      where: { isRetail: true, isActive: true },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        prices: {
+          where: {
+            priceType: "RETAIL",
+            isActive: true,
+            AND: [
+              { OR: [{ startAt: null }, { startAt: { lte: now } }] },
+              { OR: [{ endAt: null }, { endAt: { gte: now } }] },
+            ],
+          },
+          orderBy: { minQuantity: "asc" },
+          take: 1,
+        },
+      },
       take: 20,
     });
-    
-    const productContext = products
-      .map(p => `[ID:${p.id}] ${p.name}: ${Number(p.price).toLocaleString('vi-VN')}đ. Mô tả: ${p.description}`)
-      .join('\n');
+    const productContext = products.map((product) => {
+      const price = product.prices[0] ? `${Number(product.prices[0].price).toLocaleString("vi-VN")}đ` : "chưa có giá";
+      return `[ID:${product.id}] ${product.name}; giá ${price}; ${product.description ?? "Chưa có mô tả."}`;
+    }).join("\n");
 
-    let systemInstruction = '';
+    const isStaff = role !== "CUSTOMER";
+    const orderSummary = isStaff ? await prisma.order.aggregate({ _count: { id: true }, _sum: { totalAmount: true } }) : null;
+    const systemInstruction = isStaff
+      ? `Bạn là trợ lý AI nội bộ của Phú Tài Coffee Works. Người đang hỏi là ${role} tên ${userName}.
+Chỉ dùng dữ liệu hệ thống được cung cấp, không bịa số liệu và không tiết lộ dữ liệu khách hàng riêng tư.
+Tổng số đơn: ${orderSummary?._count.id ?? 0}; tổng giá trị đơn: ${Number(orderSummary?._sum.totalAmount ?? 0).toLocaleString("vi-VN")}đ.
+Sản phẩm: ${productContext}
+Trả lời ngắn gọn, trực tiếp bằng tiếng Việt, văn bản thuần, không markdown.`
+      : `Bạn là trợ lý tư vấn của Phú Tài Coffee Works. Khách hàng tên ${userName}.
+Chỉ tư vấn cà phê, sản phẩm, cách mua, báo giá và giao hàng của cửa hàng. Không bịa giá hoặc tồn kho, không tiết lộ dữ liệu người khác.
+Sản phẩm hiện có: ${productContext}
+Trả lời thân thiện, rõ ràng bằng tiếng Việt, văn bản thuần, không markdown.`;
 
-    if (role !== 'CUSTOMER') {
-      const ordersInfo = await prisma.order.aggregate({
-        _count: { id: true },
-        _sum: { totalAmount: true },
-      });
-
-      systemInstruction = `
-        XÁC NHẬN VAI TRÒ: Người đang trò chuyện là nhân sự nội bộ có vai trò ${role} của Phú Tài Coffee Works.
-        Vai trò của bạn: Trợ lý AI Phân tích Dữ liệu và Tư vấn Chiến lược kinh doanh.
-        
-        DỮ LIỆU CỦA HỆ THỐNG:
-        - Tổng số đơn hàng: ${ordersInfo._count.id}
-        - Tổng doanh thu toàn bộ: ${Number(ordersInfo._sum.totalAmount || 0).toLocaleString('vi-VN')} VNĐ.
-        
-        DANH MỤC SẢN PHẨM ĐANG KINH DOANH:
-        ${productContext}
-        
-        NGUYÊN TẮC LÀM VIỆC VỚI ADMIN (BẮT BUỘC TUÂN THỦ):
-        1. KHÔNG xưng hô là "nhân viên chăm sóc khách hàng".
-        2. BỎ QUA mọi câu từ khách sáo. Tuyệt đối KHÔNG dùng "Chào bạn", "dạ", "vâng", "ạ", "cảm ơn bạn".
-        3. Tự xưng là "Trợ lý AI". Gọi ADMIN là "Quản lý"; SALES là "Nhân viên bán hàng"; WAREHOUSE là "Nhân viên kho"; ACCOUNTANT là "Nhân viên kế toán".
-        4. Trả lời khô khan, dứt khoát, đi thẳng vào số liệu, tập trung 100% vào phân tích nghiệp vụ.
-        5. NẾU QUẢN LÝ YÊU CẦU TÌM SẢN PHẨM MỚI: Dựa vào Danh mục Sản phẩm đang kinh doanh bên trên, hãy tìm ra những dòng sản phẩm/xu hướng cà phê trên thị trường mà cửa hàng CHƯA BÁN (Ví dụ: Cold Brew, Specialty Coffee, Cà phê túi lọc...) để đề xuất nhập hàng.
-        6. Chỉ trả lời đúng phạm vi vai trò: SALES về khách hàng, giá và đơn hàng; WAREHOUSE về tồn kho và giao nhận; ACCOUNTANT về thanh toán và doanh thu; ADMIN được xem tổng quan.
-        7. Nếu không có số liệu chi tiết, phải nói rõ hệ thống chưa cung cấp dữ liệu đó, không tự suy đoán.
-        ${noMarkdownRule}
-      `;
-    } else {
-      systemInstruction = `
-        Bạn là Nhân viên Tư vấn chăm sóc khách hàng nhiệt tình của Phú Tài Coffee Works.
-        Người đang trò chuyện với bạn là khách hàng thân thiết tên: "${userName}".
-        
-        Dưới đây là thông tin các sản phẩm hiện có:
-        ${productContext}
-        
-        Quy tắc hoạt động bắt buộc:
-        1. Xưng hô thân thiện, gọi khách hàng bằng tên ("${userName}").
-        2. CHỈ tư vấn các thông tin liên quan đến cà phê, sản phẩm và dịch vụ của cửa hàng.
-        3. TUYỆT ĐỐI KHÔNG cung cấp hay tiết lộ thông tin của người khác.
-        4. Thái độ phục vụ luôn lịch sự, nhiệt tình, dễ hiểu.
-        ${noMarkdownRule}
-      `;
-    }
-
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-flash-latest',
-      systemInstruction: systemInstruction 
-    });
-
-    const chat = model.startChat({
-      history: previousMessages,
-    });
-
-    const result = await chat.sendMessage(message);
-    const botResponseText = result.response.text();
-
-    const savedBotMessage = await chatbotData.saveMessage({
+    const history = conversation.messages.slice(0, -1).map((item) => ({
+      role: item.sender === ChatbotSender.BOT ? "model" : "user",
+      parts: [{ text: item.content }],
+    }));
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest", systemInstruction });
+    const response = await model.startChat({ history }).sendMessage(message);
+    return chatbotData.saveMessage({
       conversationId,
       sender: ChatbotSender.BOT,
-      content: botResponseText,
+      content: response.response.text(),
     });
-
-    return savedBotMessage;
   }
 }

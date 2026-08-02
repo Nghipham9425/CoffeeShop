@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { ArrowRight, CircleX, Eye, FileSignature, Plus, RefreshCw, Trash2, X } from "lucide-react";
 import { AdminPanel } from "../../../components/admin/AdminPanel";
 import { AdminStatusBadge } from "../../../components/admin/AdminStatusBadge";
@@ -25,6 +26,7 @@ const nextQuoteStep: Partial<Record<QuoteRequest["status"], { status: QuoteReque
 
 export function QuotesPage() {
   const { token, sessionVersion } = useAdminOutlet();
+  const navigate = useNavigate();
   const [quotes, setQuotes] = useState<QuoteRequest[]>([]);
   const [activeColumn, setActiveColumn] = useState<QuoteRequest["status"]>("NEW");
   const [selectedQuote, setSelectedQuote] = useState<QuoteRequest | null>(null);
@@ -157,7 +159,7 @@ export function QuotesPage() {
             {visibleQuotes.length ? (
               <div className="mt-4 grid gap-3">
                 {visibleQuotes.map((quote) => (
-                  <QuoteSummaryCard key={quote.id} quote={quote} onViewDetails={() => setSelectedQuote(quote)} />
+                  <QuoteSummaryCard key={quote.id} quote={quote} onViewDetails={() => navigate(`/admin/bao-gia/${quote.id}`)} />
                 ))}
               </div>
             ) : (

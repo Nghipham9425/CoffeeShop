@@ -7,8 +7,10 @@ import { HomePage as AdminHomePage } from "./pages/admin/home/HomePage";
 import { InventoryPage as AdminInventoryPage } from "./pages/admin/inventory/InventoryPage";
 import { LoginPage as AdminLoginPage } from "./pages/admin/login/LoginPage";
 import { OrdersPage as AdminOrdersPage } from "./pages/admin/orders/OrdersPage";
+import { OrderDetailPage as AdminOrderDetailPage } from "./pages/admin/orders/OrderDetailPage";
 import { ProductsPage as AdminProductsPage } from "./pages/admin/products/ProductsPage";
 import { QuotesPage as AdminQuotesPage } from "./pages/admin/quotes/QuotesPage";
+import { QuoteDetailPage as AdminQuoteDetailPage } from "./pages/admin/quotes/QuoteDetailPage";
 import { ReportsPage as AdminReportsPage } from "./pages/admin/reports/ReportsPage";
 import { AboutPage } from "./pages/client/About/AboutPage";
 import { AuthPage } from "./pages/client/Auth/AuthPage";
@@ -61,7 +63,9 @@ export default function App() {
         <Route path="san-pham" element={<AdminProductsPage />} />
         <Route path="danh-muc" element={<AdminCategoriesPage />} />
         <Route path="don-hang" element={<AdminOrdersPage />} />
+        <Route path="don-hang/:id" element={<AdminOrderDetailPage />} />
         <Route path="bao-gia" element={<AdminQuotesPage />} />
+        <Route path="bao-gia/:id" element={<AdminQuoteDetailPage />} />
         <Route path="khach-hang" element={<AdminCustomersPage />} />
         <Route path="kho" element={<AdminInventoryPage />} />
         <Route path="lien-he" element={<Navigate to="/admin/bao-gia" replace />} />

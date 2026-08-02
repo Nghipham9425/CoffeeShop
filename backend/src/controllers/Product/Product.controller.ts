@@ -41,6 +41,18 @@ export const productController = {
     res.json(product);
   },
 
+  async getProductPrices(req: Request, res: Response) {
+    try {
+      res.json(await productService.getProductPrices(Number(req.params.id)));
+    } catch (error) {
+      if (error instanceof Error && error.message === "PRODUCT_NOT_FOUND") {
+        res.status(404).json({ message: "Không tìm thấy sản phẩm" });
+        return;
+      }
+      throw error;
+    }
+  },
+
   async createProduct(req: Request, res: Response) {
     const payload = createProductSchema.parse(req.body);
 
@@ -100,7 +112,7 @@ export const productController = {
     const payload = createProductPriceSchema.parse(req.body);
 
     try {
-      const price = await productService.addProductPrice(productId, payload);
+      const price = await productService.addProductPrice(productId, payload, req.user?.userId);
       res.status(201).json(price);
     } catch (error) {
       if (error instanceof Error && error.message === "PRODUCT_NOT_FOUND") {
@@ -113,6 +125,18 @@ export const productController = {
         return;
       }
 
+      throw error;
+    }
+  },
+
+  async getPriceHistory(req: Request, res: Response) {
+    try {
+      res.json(await productService.getPriceHistory(Number(req.params.id)));
+    } catch (error) {
+      if (error instanceof Error && error.message === "PRODUCT_NOT_FOUND") {
+        res.status(404).json({ message: "Không tìm thấy sản phẩm" });
+        return;
+      }
       throw error;
     }
   },

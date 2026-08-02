@@ -72,7 +72,8 @@ export function PaymentResultPage() {
     setRetryError("");
     setRetrying(true);
     try {
-      submitSepayForm(await publicApi.initializeSepay(orderId));
+      if (!orderCode) throw new Error("Thiếu mã đơn hàng để khởi tạo lại thanh toán.");
+      submitSepayForm(await publicApi.initializeSepay(orderId, orderCode));
     } catch (cause) {
       setRetryError(cause instanceof Error ? cause.message : "Không thể khởi tạo lại thanh toán SePay.");
       setRetrying(false);

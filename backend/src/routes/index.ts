@@ -15,6 +15,7 @@ import { reportRoutes } from "./Report/Report.routes.js";
 import promotionRoutes from "./Promotion/Promotion.routes.js";
 import chatbotRoutes from './Chatbot/Chatbot.routes.js';
 import { reviewRoutes } from "./Review/Review.routes.js";
+import { uploadRoutes } from "./Upload/Upload.routes.js";
 
 export const apiRoutes = Router();
 
@@ -33,3 +34,4 @@ apiRoutes.use("/reports", reportRoutes);
 apiRoutes.use("/promotions", promotionRoutes);
 apiRoutes.use("/chatbot", chatbotRoutes);
 apiRoutes.use("/reviews", reviewRoutes);
+apiRoutes.use("/uploads", uploadRoutes);

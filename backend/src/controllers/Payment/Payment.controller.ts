@@ -6,7 +6,7 @@ export const paymentController = {
   async initializeSepay(req: Request, res: Response) {
     const payload = initializeSepaySchema.parse(req.body);
     try {
-      res.json(await paymentService.initializeSepay(payload));
+      res.json(await paymentService.initializeSepay(payload, req.user?.userId));
     } catch (error) {
       if (error instanceof Error && error.message === "SEPAY_NOT_CONFIGURED") {
         res.status(503).json({ message: "Cổng SePay chưa được cấu hình." });

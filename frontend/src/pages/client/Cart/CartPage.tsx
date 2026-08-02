@@ -122,7 +122,7 @@ export function CartPage() {
       setForm(initialForm);
       setCreatedOrder(order);
       if (form.paymentMethod === "SEPAY") {
-        submitSepayForm(await publicApi.initializeSepay(order.id));
+        submitSepayForm(await publicApi.initializeSepay(order.id, order.orderCode, adminAuth.getToken()));
       }
     } catch (checkoutError) {
       setError(checkoutError instanceof Error ? checkoutError.message : "Không thể đặt hàng lúc này.");
@@ -202,7 +202,7 @@ export function CartPage() {
                 <Card key={item.productId} className="bg-white">
                   <CardContent className="grid gap-5 p-5 md:grid-cols-[1fr_auto] md:items-center">
                     <div>
-                      <Badge>MOQ {item.minimumOrderKg}kg</Badge>
+                      <Badge>Tối thiểu 1 kg</Badge>
                       <h2 className="mt-3 text-2xl font-black text-stone-950">{item.name}</h2>
                       <p className="mt-2 text-stone-600">
                         {formatVnd(item.price)} / {item.unit}

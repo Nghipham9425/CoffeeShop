@@ -12,15 +12,20 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed:base": "tsx prisma/seed.ts",
+    "db:seed": "npm run db:seed:base && npm run db:seed:factory-catalog && npm run db:seed:inventory",
+    "db:seed:inventory": "tsx scripts/seed-inventory-demo.ts",
+    "db:seed:factory-catalog": "tsx scripts/seed-factory-catalog.ts",
+    "db:migrate:inventory-grams": "tsx scripts/migrate-inventory-to-grams.ts"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "npm run db:seed"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@prisma/client": "^6.19.0",
     "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.10.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
@@ -29,6 +34,7 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.1",
+    "multer": "^2.2.0",
     "nodemailer": "^9.0.3",
     "sepay-pg-node": "^1.0.0",
     "swagger-jsdoc": "^6.3.0",
@@ -41,6 +47,7 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.10",
+    "@types/multer": "^2.2.0",
     "@types/node": "^25.0.3",
     "@types/nodemailer": "^8.0.1",
     "@types/swagger-jsdoc": "^6.0.4",

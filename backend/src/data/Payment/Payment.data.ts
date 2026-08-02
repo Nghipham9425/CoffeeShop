@@ -61,7 +61,7 @@ export const paymentData = {
     return prisma.$transaction(async (tx) => {
       const order = await tx.order.findUnique({
         where: { id: orderId },
-        include: { items: true },
+        include: { items: { include: { allocations: { include: { inventory: true } } } }, payments: true },
       });
       if (!order || order.status !== OrderStatus.PENDING) return false;
 
@@ -81,6 +81,26 @@ export const paymentData = {
       if (cancelledOrder.count !== 1) return false;
 
       for (const item of order.items) {
+        if (item.allocations.length) {
+          for (const allocation of item.allocations) {
+            const inventory = await tx.inventory.update({
+              where: { id: allocation.inventoryId },
+              data: { quantity: { increment: allocation.quantity } },
+            });
+            await tx.stockMovement.create({
+              data: {
+                productId: item.productId,
+                type: StockMovementType.RETURN,
+                quantity: allocation.quantity,
+                warehouse: allocation.inventory.warehouse,
+                balanceAfter: inventory.quantity,
+                reason: "Hoàn tồn do đơn SePay quá hạn thanh toán.",
+                reference: order.orderCode,
+              },
+            });
+          }
+          continue;
+        }
         const inventory = await tx.inventory.findFirst({
           where: { productId: item.productId },
           orderBy: { quantity: "desc" },

@@ -30,14 +30,21 @@ function extractOrderCode(value?: string) {
 }
 
 export const paymentService = {
-  async initializeSepay(input: InitializeSepayInput) {
+  async initializeSepay(input: InitializeSepayInput, userId?: number) {
     if (!env.sepayMerchantId || !env.sepaySecretKey) {
       throw new Error("SEPAY_NOT_CONFIGURED");
     }
 
     const order = await paymentData.findSepayOrder(input.orderId);
     const payment = order?.payments[0];
-    if (!order || !payment || payment.status !== PaymentStatus.PENDING || payment.method !== PaymentMethod.SEPAY) {
+    if (
+      !order
+      || order.orderCode !== input.orderCode
+      || (userId !== undefined && order.userId !== null && order.userId !== userId)
+      || !payment
+      || payment.status !== PaymentStatus.PENDING
+      || payment.method !== PaymentMethod.SEPAY
+    ) {
       throw new Error("SEPAY_ORDER_NOT_AVAILABLE");
     }
 

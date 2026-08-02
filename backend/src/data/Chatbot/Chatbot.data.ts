@@ -1,78 +1,63 @@
-import { prisma } from '../prisma.js';
-import { ChatbotSender } from '@prisma/client';
+import { createHash } from "node:crypto";
+import { prisma } from "../prisma.js";
+import { ChatbotSender } from "@prisma/client";
+
+export function hashGuestToken(token: string) {
+  return createHash("sha256").update(token).digest("hex");
+}
 
 export const chatbotData = {
-  async getConversationById(conversationId: number) {
+  getConversationById(conversationId: number) {
     return prisma.chatbotConversation.findUnique({
       where: { id: conversationId },
-      include: {
-        messages: {
-          orderBy: { createdAt: 'asc' },
-        },
-      },
+      include: { messages: { orderBy: { createdAt: "asc" } } },
     });
   },
 
-  async getConversations(userId?: number) {
+  getConversationsForUser(userId: number) {
+    return prisma.chatbotConversation.findMany({ where: { userId }, orderBy: { updatedAt: "desc" } });
+  },
+
+  getConversationsForGuest(guestToken: string) {
     return prisma.chatbotConversation.findMany({
-      where: { userId },
-      orderBy: { updatedAt: 'desc' },
+      where: { guestTokenHash: hashGuestToken(guestToken) },
+      orderBy: { updatedAt: "desc" },
     });
   },
 
-  async createConversation(data: { userId?: number; guestName?: string; guestPhone?: string; topic?: string }) {
+  getAllConversations() {
+    return prisma.chatbotConversation.findMany({ orderBy: { updatedAt: "desc" }, take: 300 });
+  },
+
+  createConversation(data: { userId?: number; guestName?: string; guestPhone?: string; topic?: string; guestTokenHash?: string }) {
     return prisma.chatbotConversation.create({
       data: {
         userId: data.userId,
         guestName: data.guestName,
         guestPhone: data.guestPhone,
+        guestTokenHash: data.guestTokenHash,
         topic: data.topic,
         isResolved: false,
       },
     });
   },
 
-  async updateTopic(id: number, topic: string) {
-    return prisma.chatbotConversation.update({
-      where: { id },
-      data: { topic },
+  updateTopic(id: number, topic: string) {
+    return prisma.chatbotConversation.update({ where: { id }, data: { topic } });
+  },
+
+  saveMessage(data: { conversationId: number; sender: ChatbotSender; content: string; intent?: string }) {
+    return prisma.chatbotMessage.create({ data });
+  },
+
+  deleteConversation(id: number) {
+    return prisma.$transaction(async (tx) => {
+      await tx.chatbotMessage.deleteMany({ where: { conversationId: id } });
+      return tx.chatbotConversation.delete({ where: { id } });
     });
   },
 
-  async saveMessage(data: { conversationId: number; sender: ChatbotSender; content: string; intent?: string }) {
-    return prisma.chatbotMessage.create({
-      data: {
-        conversationId: data.conversationId,
-        sender: data.sender,
-        content: data.content,
-        intent: data.intent,
-      },
-    });
+  cleanupEmptyConversationsForUser(userId: number) {
+    return prisma.chatbotConversation.deleteMany({ where: { userId, messages: { none: {} } } });
   },
-
-  async markAsResolved(conversationId: number) {
-    return prisma.chatbotConversation.update({
-      where: { id: conversationId },
-      data: { isResolved: true },
-    });
-  },
-
-  async deleteConversation(id: number) {
-    await prisma.chatbotMessage.deleteMany({
-      where: { conversationId: id },
-    });
-    return prisma.chatbotConversation.delete({
-      where: { id },
-    });
-  },
-
-  // THÊM MỚI: Dọn dẹp rác tự động (Xóa các phiên chat có 0 tin nhắn)
-  async cleanupEmptyConversations(userId?: number) {
-    return prisma.chatbotConversation.deleteMany({
-      where: {
-        userId,
-        messages: { none: {} } // Điều kiện: Không có bất kỳ message nào liên kết
-      }
-    });
-  }
 };

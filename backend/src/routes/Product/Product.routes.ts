@@ -14,6 +14,13 @@ productRoutes.get(
   asyncHandler(productController.getAdminProducts),
 );
 productRoutes.get("/slug/:slug", asyncHandler(productController.getProductBySlug));
+productRoutes.get("/:id/prices", asyncHandler(productController.getProductPrices));
+productRoutes.get(
+  "/:id/price-history",
+  authMiddleware,
+  authorizeRoles(UserRole.ADMIN, UserRole.SALES),
+  asyncHandler(productController.getPriceHistory),
+);
 productRoutes.get("/:id", asyncHandler(productController.getProductById));
 productRoutes.post(
   "/",

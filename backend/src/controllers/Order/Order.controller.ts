@@ -90,12 +90,12 @@ export const orderController = {
   },
 
   async trackOrder(req: Request, res: Response) {
-    const trackingCode = String(req.query.trackingCode ?? "").trim();
-    if (!trackingCode) {
+    const code = String(req.query.code ?? req.query.trackingCode ?? "").trim();
+    if (!code) {
       res.status(400).json({ message: "Vui lòng nhập mã vận đơn." });
       return;
     }
-    const order = await orderService.trackOrder(trackingCode);
+    const order = await orderService.trackOrder(code);
     if (!order) {
       res.status(404).json({ message: "Không tìm thấy vận đơn phù hợp." });
       return;

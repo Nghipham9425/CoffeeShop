@@ -28,6 +28,9 @@ export const env = {
   mailFrom: process.env.MAIL_FROM?.trim(),
   resetPasswordExpiresMinutes: Number(process.env.RESET_PASSWORD_EXPIRES_MINUTES ?? 30),
   googleClientId: process.env.GOOGLE_CLIENT_ID?.trim(),
+  cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME?.trim(),
+  cloudinaryApiKey: process.env.CLOUDINARY_API_KEY?.trim(),
+  cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET?.trim(),
   geminiApiKey: process.env.GEMINI_API_KEY?.trim() ?? "",
 };
 
