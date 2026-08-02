@@ -75,7 +75,9 @@ export const authService = {
         audience: env.googleClientId,
       });
       payload = ticket.getPayload();
-    } catch {
+    } catch (error) {
+      // Only log Google's verification reason; never log the ID token itself.
+      console.error("[Google OAuth] ID token verification failed:", error instanceof Error ? error.message : error);
       throw new Error("INVALID_GOOGLE_CREDENTIAL");
     }
 
