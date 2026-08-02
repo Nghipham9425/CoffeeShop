@@ -17,6 +17,13 @@ export function errorHandler(
   }
 
   if (error instanceof Error) {
+    if (error.message === "MAIL_DELIVERY_FAILED" || error.message === "SMTP_NOT_CONFIGURED") {
+      res.status(503).json({
+        message: "Dá»‹ch vá»¥ gá»­i email Ä‘ang táº¡m thá»i khÃ´ng kháº£ dá»¥ng. Vui lÃ²ng thá»­ láº¡i sau.",
+      });
+      return;
+    }
+
     res.status(500).json({
       message: "Máy chủ đang gặp lỗi.",
       detail: isDevelopment ? error.message : undefined,

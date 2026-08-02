@@ -113,11 +113,16 @@ export const authService = {
     const resetUrl = new URL("/dat-lai-mat-khau", env.clientAppUrl);
     resetUrl.searchParams.set("token", token);
 
-    await mailService.sendPasswordResetEmail({
-      email: user.email,
-      fullName: user.fullName,
-      resetUrl: resetUrl.toString(),
-    });
+    try {
+      await mailService.sendPasswordResetEmail({
+        email: user.email,
+        fullName: user.fullName,
+        resetUrl: resetUrl.toString(),
+      });
+    } catch (error) {
+      console.error("[Mail] Password reset email failed:", error instanceof Error ? error.message : error);
+      throw new Error("MAIL_DELIVERY_FAILED");
+    }
   },
 
   async resetPassword(input: ResetPasswordInput) {
