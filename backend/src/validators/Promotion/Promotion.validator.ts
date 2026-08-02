@@ -23,3 +23,7 @@ export const validateVoucherSchema = z.object({
   code: z.string().trim().min(1, 'Vui lòng nhập mã giảm giá').transform((value) => value.toUpperCase()),
   subtotal: z.coerce.number().positive('Giỏ hàng phải có sản phẩm'),
 });
+
+export const updateOrderPromotionStatusSchema = z.object({
+  status: z.enum(['ACTIVE', 'DISABLED']),
+});

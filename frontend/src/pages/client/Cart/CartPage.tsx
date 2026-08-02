@@ -175,7 +175,7 @@ export function CartPage() {
                   </p>
                 </div>
               </div>
-              <Button asChild>
+              <Button asChild className="bg-[#a8633c] text-white hover:bg-[#814526]">
                 <Link to="/san-pham">Mua thêm</Link>
               </Button>
             </CardContent>

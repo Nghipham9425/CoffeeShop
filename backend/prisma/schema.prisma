@@ -643,8 +643,23 @@ model Debt {
   updatedAt          DateTime         @updatedAt @map("updated_at")
   businessCustomer   BusinessCustomer @relation(fields: [businessCustomerId], references: [id])
   invoice            Invoice?         @relation(fields: [invoiceId], references: [id])
+  payments           DebtPayment[]
 
   @@map("debts")
+}
+
+model DebtPayment {
+  id              Int      @id @default(autoincrement())
+  debtId          Int      @map("debt_id")
+  amount          Decimal  @db.Decimal(14, 2)
+  transactionCode String?  @map("transaction_code")
+  paidAt          DateTime @default(now()) @map("paid_at")
+  note            String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  debt            Debt     @relation(fields: [debtId], references: [id], onDelete: Cascade)
+
+  @@index([debtId, paidAt])
+  @@map("debt_payments")
 }
 
 model Supplier {

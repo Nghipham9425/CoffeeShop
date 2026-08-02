@@ -231,7 +231,7 @@ export const orderService = {
       throw new Error("SHIPMENT_MUST_BE_SHIPPED");
     }
 
-    if (input.status === OrderStatus.COMPLETED && shipment?.status !== ShipmentStatus.DELIVERED) {
+    if (input.status === OrderStatus.COMPLETED && shipment?.status !== ShipmentStatus.SHIPPED && shipment?.status !== ShipmentStatus.DELIVERED) {
       throw new Error("SHIPMENT_MUST_BE_DELIVERED");
     }
 
@@ -294,6 +294,19 @@ export const orderService = {
     };
     if (!allowedTransitions[currentStatus].includes(nextStatus)) {
       throw new Error("INVALID_SHIPMENT_STATUS_TRANSITION");
+    }
+
+    if (nextStatus === ShipmentStatus.PACKED && order.status !== OrderStatus.PACKING) {
+      throw new Error("ORDER_MUST_BE_PACKING");
+    }
+    if (nextStatus === ShipmentStatus.SHIPPED && (!input.carrier?.trim() || !input.trackingCode?.trim())) {
+      throw new Error("SHIPMENT_INFORMATION_REQUIRED");
+    }
+    if (nextStatus === ShipmentStatus.SHIPPED && order.status !== OrderStatus.PACKING && order.status !== OrderStatus.SHIPPING) {
+      throw new Error("ORDER_MUST_BE_PACKING");
+    }
+    if (nextStatus === ShipmentStatus.DELIVERED && order.status !== OrderStatus.SHIPPING) {
+      throw new Error("ORDER_MUST_BE_SHIPPING");
     }
 
     return mapShipment(await orderData.upsertShipment(orderId, { ...input, status: nextStatus }));

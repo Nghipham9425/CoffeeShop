@@ -102,7 +102,7 @@ export function PaymentResultPage() {
                 {retrying ? "Đang khởi tạo..." : "Thanh toán lại qua SePay"}
               </Button>
             ) : null}
-            <Button asChild variant={canRetry ? "outline" : "default"}><Link to="/san-pham">Tiếp tục mua hàng</Link></Button>
+            <Button asChild variant={canRetry ? "outline" : "default"} className={canRetry ? undefined : "bg-[#a8633c] text-white hover:bg-[#814526]"}><Link to="/san-pham">Tiếp tục mua hàng</Link></Button>
             <Button asChild variant="outline"><Link to="/bao-gia">Liên hệ hỗ trợ</Link></Button>
           </div>
         </CardContent>

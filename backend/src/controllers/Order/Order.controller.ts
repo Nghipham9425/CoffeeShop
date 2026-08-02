@@ -123,6 +123,10 @@ export const orderController = {
         res.status(404).json({ message: "Không tìm thấy đơn hàng" });
         return;
       }
+      if (error instanceof Error && error.message === "SHIPMENT_INFORMATION_REQUIRED") {
+        res.status(400).json({ message: "Cần chọn đơn vị vận chuyển và cấp mã vận đơn trước khi bàn giao." });
+        return;
+      }
 
       if (error instanceof Error && ["INVALID_ORDER_STATUS_TRANSITION", "PAYMENT_MUST_BE_CONFIRMED", "SHIPMENT_MUST_BE_SHIPPED", "SHIPMENT_MUST_BE_DELIVERED"].includes(error.message)) {
         const messages: Record<string, string> = {
@@ -166,6 +170,19 @@ export const orderController = {
     } catch (error) {
       if (error instanceof Error && error.message === "ORDER_NOT_FOUND") {
         res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+        return;
+      }
+      if (error instanceof Error && error.message === "SHIPMENT_INFORMATION_REQUIRED") {
+        res.status(400).json({ message: "Cần chọn đơn vị vận chuyển và cấp mã vận đơn trước khi bàn giao." });
+        return;
+      }
+      if (error instanceof Error && ["INVALID_SHIPMENT_STATUS_TRANSITION", "ORDER_MUST_BE_PACKING", "ORDER_MUST_BE_SHIPPING"].includes(error.message)) {
+        const messages: Record<string, string> = {
+          INVALID_SHIPMENT_STATUS_TRANSITION: "Trạng thái giao nhận không hợp lệ.",
+          ORDER_MUST_BE_PACKING: "Đơn hàng cần ở trạng thái đang đóng gói trước khi cập nhật giao nhận.",
+          ORDER_MUST_BE_SHIPPING: "Đơn hàng cần ở trạng thái đang giao trước khi xác nhận đã giao.",
+        };
+        res.status(400).json({ message: messages[error.message] });
         return;
       }
 

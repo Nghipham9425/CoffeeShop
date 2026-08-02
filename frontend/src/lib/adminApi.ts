@@ -210,6 +210,25 @@ export type BusinessCustomer = {
   debtCount: number;
 };
 
+export type B2BContract = {
+  id: number; contractCode: string; title: string; totalValue: number | null; depositPercent: number;
+  status: "DRAFT" | "ACTIVE" | "COMPLETED" | "CANCELLED"; note: string | null; createdAt: string;
+  businessCustomer: { id: number; companyName: string; contactName: string };
+};
+export type B2BInvoice = {
+  id: number; invoiceCode: string; amount: number; paidAmount: number; dueDate: string | null;
+  status: "UNPAID" | "PARTIAL" | "PAID" | "OVERDUE" | "CANCELLED"; note: string | null; createdAt: string;
+  businessCustomer: { id: number; companyName: string }; contract: { id: number; contractCode: string } | null;
+  debts: Array<{ id: number; debtCode: string; remainingAmount: number; status: string }>;
+};
+export type B2BDebt = {
+  id: number; debtCode: string; originalAmount: number; remainingAmount: number; dueDate: string | null;
+  status: "OPEN" | "PARTIAL" | "CLEARED" | "OVERDUE"; note: string | null; createdAt: string;
+  businessCustomer: { id: number; companyName: string }; invoice: { id: number; invoiceCode: string; amount: number; paidAmount: number } | null;
+  payments: Array<{ id: number; amount: number; transactionCode: string | null; paidAt: string; note: string | null }>;
+};
+export type B2BOverview = { contracts: B2BContract[]; invoices: B2BInvoice[]; debts: B2BDebt[] };
+
 export type ReportOverview = {
   productCount: number;
   categoryCount: number;
@@ -631,6 +650,10 @@ export const adminApi = {
       headers: authHeaders(token),
     });
   },
+  b2bOverview(token: string) { return request<B2BOverview>("/b2b", { headers: authHeaders(token) }); },
+  updateB2BContract(token: string, id: number, payload: { status: B2BContract["status"]; note?: string }) { return request<B2BContract>(`/b2b/contracts/${id}`, { method: "PATCH", headers: authHeaders(token), body: JSON.stringify(payload) }); },
+  createB2BInvoice(token: string, payload: { businessCustomerId: number; contractId?: number; amount: number; dueDate?: string; note?: string }) { return request<B2BInvoice>("/b2b/invoices", { method: "POST", headers: authHeaders(token), body: JSON.stringify(payload) }); },
+  recordDebtPayment(token: string, debtId: number, payload: { amount: number; transactionCode?: string; paidAt?: string; note?: string }) { return request<B2BDebt>(`/b2b/debts/${debtId}/payments`, { method: "POST", headers: authHeaders(token), body: JSON.stringify(payload) }); },
 
   returnRequests(token: string) { return request<AdminReturnRequest[]>("/orders/return-requests/all", { headers: authHeaders(token) }); },
   updateReturnRequest(token: string, id: number, payload: { status: AdminReturnRequest["status"]; resolutionNote?: string }) { return request<AdminReturnRequest>(`/orders/return-requests/${id}`, { method: "PATCH", headers: authHeaders(token), body: JSON.stringify(payload) }); },

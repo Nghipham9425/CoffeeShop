@@ -68,6 +68,22 @@ export class PromotionService {
   }
 
   static listOrderPromotions() {
-    return prisma.promotion.findMany({ orderBy: { createdAt: 'desc' } });
+    return prisma.promotion.findMany({ orderBy: { createdAt: 'desc' }, include: { _count: { select: { orders: true } } } });
+  }
+
+  static async updateOrderPromotionStatus(id: number, status: 'ACTIVE' | 'DISABLED') {
+    const promotion = await prisma.promotion.findUnique({ where: { id } });
+    if (!promotion) throw new Error('VOUCHER_NOT_FOUND');
+    if (promotion.endAt < new Date()) throw new Error('VOUCHER_EXPIRED');
+
+    return prisma.promotion.update({ where: { id }, data: { status } });
+  }
+
+  static async deleteUnusedOrderPromotion(id: number) {
+    const promotion = await prisma.promotion.findUnique({ where: { id }, include: { _count: { select: { orders: true } } } });
+    if (!promotion) throw new Error('VOUCHER_NOT_FOUND');
+    if (promotion._count.orders > 0) throw new Error('VOUCHER_ALREADY_USED');
+
+    await prisma.promotion.delete({ where: { id } });
   }
 }
