@@ -10,6 +10,8 @@ import { LoginPage as AdminLoginPage } from "./pages/admin/login/LoginPage";
 import { OrdersPage as AdminOrdersPage } from "./pages/admin/orders/OrdersPage";
 import { OrderDetailPage as AdminOrderDetailPage } from "./pages/admin/orders/OrderDetailPage";
 import { ProductsPage as AdminProductsPage } from "./pages/admin/products/ProductsPage";
+import { ProductDetailPage as AdminProductDetailPage } from "./pages/admin/products/ProductDetailPage";
+import { ProductEditorPage } from "./pages/admin/products/ProductEditorPage";
 import { QuotesPage as AdminQuotesPage } from "./pages/admin/quotes/QuotesPage";
 import { QuoteDetailPage as AdminQuoteDetailPage } from "./pages/admin/quotes/QuoteDetailPage";
 import { ReportsPage as AdminReportsPage } from "./pages/admin/reports/ReportsPage";
@@ -64,6 +66,9 @@ export default function App() {
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<AdminHomePage />} />
         <Route path="san-pham" element={<AdminProductsPage />} />
+        <Route path="san-pham/them" element={<ProductEditorPage />} />
+        <Route path="san-pham/:id" element={<AdminProductDetailPage />} />
+        <Route path="san-pham/:id/chinh-sua" element={<ProductEditorPage />} />
         <Route path="danh-muc" element={<AdminCategoriesPage />} />
         <Route path="don-hang" element={<AdminOrdersPage />} />
         <Route path="don-hang/:id" element={<AdminOrderDetailPage />} />

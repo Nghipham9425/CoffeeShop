@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, CircleX, Eye, FileSignature, Plus, RefreshCw, Trash2, X } from "lucide-react";
+import { ArrowRight, CircleX, Eye, FileSignature, Plus, Trash2, X } from "lucide-react";
 import { AdminPanel } from "../../../components/admin/AdminPanel";
 import { AdminStatusBadge } from "../../../components/admin/AdminStatusBadge";
 import { Button } from "../../../components/ui/button";
@@ -111,12 +111,7 @@ export function QuotesPage() {
       <AdminPanel
         title="Tiến độ xử lý báo giá"
         description="Mỗi yêu cầu nằm trong đúng một trạng thái và chỉ chuyển sang bước nghiệp vụ kế tiếp."
-        action={
-          <Button onClick={loadQuotes} disabled={loading} className="rounded-lg bg-[#553B2F] text-white hover:bg-[#3f2a21]">
-            <RefreshCw size={16} />
-            Tải lại
-          </Button>
-        }
+        action={null}
       >
         {loading ? (
           <LoadingState />

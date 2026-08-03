@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { BarChart3, Boxes, ClipboardList, RefreshCw, UsersRound } from "lucide-react";
+import { BarChart3, Boxes, ClipboardList, UsersRound } from "lucide-react";
 import { AdminMetricCard } from "../../../components/admin/AdminMetricCard";
 import { AdminPanel } from "../../../components/admin/AdminPanel";
 import { AdminStatusBadge } from "../../../components/admin/AdminStatusBadge";
-import { Button } from "../../../components/ui/button";
 import { useAdminOutlet } from "../../../layouts/AdminLayout";
 import { adminApi, formatCurrency, formatDate, type ReportOverview } from "../../../lib/adminApi";
 import { EmptyState, ErrorState, LoadingState } from "../shared/ApiState";
@@ -40,13 +39,6 @@ export function ReportsPage() {
       description="Tổng hợp nhanh doanh thu, đơn hàng, khách hàng, tồn kho và sản phẩm bán chạy."
     >
       {error ? <ErrorState message={error} /> : null}
-
-      <div className="flex justify-end">
-        <Button onClick={loadReport} disabled={loading} className="rounded-lg bg-[#553B2F] text-white hover:bg-[#3f2a21]">
-          <RefreshCw size={16} />
-          Tải lại báo cáo
-        </Button>
-      </div>
 
       {loading ? <LoadingState /> : null}
 

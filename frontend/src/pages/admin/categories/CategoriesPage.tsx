@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Edit3, Eye, EyeOff, FolderPlus, RotateCw, X } from "lucide-react";
+import { Edit3, Eye, EyeOff, FolderPlus, X } from "lucide-react";
 import { AdminPanel } from "../../../components/admin/AdminPanel";
 import { Button } from "../../../components/ui/button";
 import { useAdminOutlet } from "../../../layouts/AdminLayout";
@@ -175,18 +175,7 @@ export function CategoriesPage() {
       <AdminPanel
         title="Danh mục sản phẩm"
         description="Danh sách nhóm sản phẩm đang dùng để phân loại hàng hóa trên website."
-        action={
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="outline" onClick={loadCategories} className="rounded-lg border-[#C7A792] text-[#553B2F] hover:bg-[#E8D3C7]">
-              <RotateCw size={16} />
-              Tải lại
-            </Button>
-            <Button type="button" onClick={startCreate} className="rounded-lg bg-[#553B2F] text-white hover:bg-[#3f2a21]">
-              <FolderPlus size={16} />
-              Thêm danh mục
-            </Button>
-          </div>
-        }
+        action={<Button type="button" onClick={startCreate} className="rounded-lg bg-[#553B2F] text-white hover:bg-[#3f2a21]"><FolderPlus size={16} /> Thêm danh mục</Button>}
       >
         {loading ? (
           <LoadingState />

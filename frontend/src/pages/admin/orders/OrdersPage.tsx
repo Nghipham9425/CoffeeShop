@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle2, CircleX, CreditCard, Eye, PackageCheck, RefreshCw, Truck, X } from "lucide-react";
+import { CheckCircle2, CircleX, CreditCard, Eye, PackageCheck, Truck, X } from "lucide-react";
 import { AdminPanel } from "../../../components/admin/AdminPanel";
 import { AdminStatusBadge } from "../../../components/admin/AdminStatusBadge";
 import { Button } from "../../../components/ui/button";
@@ -146,12 +146,7 @@ export function OrdersPage() {
       <AdminPanel
         title="Tiến độ xử lý đơn hàng"
         description="Mỗi đơn nằm trong đúng cột trạng thái. Khi xử lý bước kế tiếp, đơn sẽ tự chuyển sang cột tương ứng."
-        action={
-          <Button onClick={loadOrders} disabled={loading} className="rounded-lg bg-[#553B2F] text-white hover:bg-[#3f2a21]">
-            <RefreshCw size={16} />
-            Tải lại
-          </Button>
-        }
+        action={null}
       >
         <div className="grid gap-3 border-b border-[#E8D3C7] p-5 md:grid-cols-[1fr_auto]">
           <input

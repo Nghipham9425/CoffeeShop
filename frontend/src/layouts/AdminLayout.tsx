@@ -49,7 +49,7 @@ export function AdminLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f2ed] text-[#553B2F]">
+    <div className="min-h-screen bg-[#fbf8f5] text-[#3b2419]">
       <AdminSidebar user={user} onLogout={clearSession} />
       <div className="lg:pl-72">
         <AdminTopbar />

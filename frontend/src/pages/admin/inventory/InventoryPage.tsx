@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { AlertTriangle, ArrowDownToLine, ArrowUpFromLine, ClipboardList, History, RefreshCw, Settings2, X } from "lucide-react";
+import { AlertTriangle, ArrowDownToLine, ArrowUpFromLine, ClipboardList, History, Settings2, X } from "lucide-react";
 import { AdminPanel } from "../../../components/admin/AdminPanel";
 import { Button } from "../../../components/ui/button";
 import { useAdminOutlet } from "../../../layouts/AdminLayout";
@@ -194,7 +194,7 @@ export function InventoryPage() {
         </form>
       </AdminPanel>}
 
-      <AdminPanel title="Tồn kho sản phẩm" description="Nhập, xuất hoặc kiểm kê từ từng sản phẩm. Đơn hàng hoàn tất sẽ tự tạo phiếu xuất kho." action={<Button onClick={loadInventories} disabled={loading} className="bg-[#553B2F] text-white hover:bg-[#3f2a21]"><RefreshCw size={16} />Tải lại</Button>}>
+      <AdminPanel title="Tồn kho sản phẩm" description="Nhập, xuất hoặc kiểm kê từ từng sản phẩm. Đơn hàng hoàn tất sẽ tự tạo phiếu xuất kho.">
         <div className="grid gap-3 border-b border-[#E8D3C7] p-5 md:grid-cols-[1fr_auto_auto]">
           <input value={keyword} onChange={(event) => setKeyword(event.target.value)} onKeyDown={(event) => event.key === "Enter" && void loadInventories()} placeholder="Tìm theo tên hoặc mã sản phẩm" className="rounded-lg border border-[#C7A792] px-3 py-2.5" />
           <label className="flex items-center gap-2 rounded-lg border border-[#C7A792] px-3 py-2 text-sm font-bold"><input type="checkbox" checked={onlyLowStock} onChange={(event) => setOnlyLowStock(event.target.checked)} /> Chỉ tồn thấp</label>

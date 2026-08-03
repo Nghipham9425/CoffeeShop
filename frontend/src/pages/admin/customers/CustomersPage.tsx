@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { Building2, RefreshCw, UserRoundCheck } from "lucide-react";
+import { Building2, UserRoundCheck } from "lucide-react";
 import { AdminPanel } from "../../../components/admin/AdminPanel";
 import { AdminStatusBadge } from "../../../components/admin/AdminStatusBadge";
 import { Button } from "../../../components/ui/button";
@@ -149,12 +149,7 @@ export function CustomersPage() {
       <AdminPanel
         title="Tìm khách hàng"
         description="Tìm theo tên, email, số điện thoại, công ty hoặc mã số thuế."
-        action={
-          <Button onClick={loadCustomers} disabled={loading} className="rounded-lg bg-[#553B2F] text-white hover:bg-[#3f2a21]">
-            <RefreshCw size={16} />
-            Tải lại
-          </Button>
-        }
+        action={null}
       >
         <div className="grid gap-3 p-5 md:grid-cols-[1fr_auto]">
           <input
