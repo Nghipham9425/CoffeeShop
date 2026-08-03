@@ -22,8 +22,26 @@ export const quoteRequestData = {
   findPublic(id: number, accessTokenHash: string) {
     return prisma.quoteRequest.findFirst({ where: { id, accessTokenHash }, include: quoteInclude });
   },
+  findForUser(id: number, userId: number) {
+    return prisma.quoteRequest.findFirst({ where: { id, businessCustomer: { userId } }, include: quoteInclude });
+  },
   create(data: CreateQuoteRequestInput, accessTokenHash: string) {
     return prisma.quoteRequest.create({ data: { ...data, accessTokenHash }, include: quoteInclude });
+  },
+  async createForUser(userId: number, data: CreateQuoteRequestInput, accessTokenHash: string) {
+    return prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: { fullName: true, email: true, phone: true } });
+      const phone = data.phoneOrEmail.includes("@") ? (user.phone ?? "Chưa cập nhật") : data.phoneOrEmail;
+      const businessCustomer = await tx.businessCustomer.upsert({
+        where: { userId },
+        create: { userId, companyName: data.companyName, contactName: data.contactName, phone, email: user.email },
+        update: { companyName: data.companyName, contactName: data.contactName, phone, email: user.email },
+      });
+      return tx.quoteRequest.create({
+        data: { ...data, businessCustomerId: businessCustomer.id, accessTokenHash },
+        include: quoteInclude,
+      });
+    });
   },
   updateStatus(id: number, data: UpdateQuoteRequestStatusInput) {
     return prisma.quoteRequest.update({ where: { id }, data, include: quoteInclude });

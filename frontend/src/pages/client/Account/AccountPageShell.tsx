@@ -1,4 +1,4 @@
-import { MapPin, Package, UserRound, type LucideIcon } from "lucide-react";
+import { Building2, FileCheck2, FileText, Landmark, MapPin, Package, UserRound, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link, Navigate, NavLink } from "react-router-dom";
 import { adminAuth } from "../../../lib/adminApi";
@@ -7,6 +7,10 @@ const navigation: Array<[string, string, LucideIcon]> = [
   ["Thông tin cá nhân", "/tai-khoan/thong-tin", UserRound],
   ["Lịch sử đơn hàng", "/tai-khoan/don-hang", Package],
   ["Sổ địa chỉ", "/tai-khoan/dia-chi", MapPin],
+  ["Tổng quan doanh nghiệp", "/tai-khoan/b2b", Building2],
+  ["Báo giá doanh nghiệp", "/tai-khoan/b2b/bao-gia", FileText],
+  ["Hợp đồng doanh nghiệp", "/tai-khoan/b2b/hop-dong", FileCheck2],
+  ["Hóa đơn và công nợ", "/tai-khoan/b2b/cong-no", Landmark],
 ];
 
 export function AccountPageShell({ title, description, children }: { title: string; description: string; children: ReactNode }) {

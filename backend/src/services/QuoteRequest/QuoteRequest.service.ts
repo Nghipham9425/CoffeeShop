@@ -24,9 +24,11 @@ function mapQuoteRequest(quote: Awaited<ReturnType<typeof quoteRequestData.findM
 export const quoteRequestService = {
   async getQuoteRequests() { return (await quoteRequestData.findMany()).map(mapQuoteRequest); },
   async getQuoteRequestById(id: number) { const quote = await quoteRequestData.findById(id); return quote ? mapQuoteRequest(quote) : null; },
-  async createQuoteRequest(input: CreateQuoteRequestInput) {
+  async createQuoteRequest(input: CreateQuoteRequestInput, userId?: number) {
     const accessToken = randomBytes(24).toString("hex");
-    const quote = await quoteRequestData.create(input, hashToken(accessToken));
+    const quote = userId
+      ? await quoteRequestData.createForUser(userId, input, hashToken(accessToken))
+      : await quoteRequestData.create(input, hashToken(accessToken));
     return { quote: mapQuoteRequest(quote), accessToken };
   },
   async getPublicQuote(id: number, token: string) { const quote = await quoteRequestData.findPublic(id, hashToken(token)); return quote ? mapQuoteRequest(quote) : null; },
@@ -49,6 +51,13 @@ export const quoteRequestService = {
     if (current.status !== "QUOTED") throw new Error("QUOTE_NOT_AWAITING_RESPONSE");
     if (current.validUntil && current.validUntil < new Date()) throw new Error("QUOTE_EXPIRED");
     return mapQuoteRequest(await quoteRequestData.respond(id, input.action === "ACCEPT" ? "ACCEPTED" : "REJECTED"));
+  },
+  async respondQuotationForUser(id: number, userId: number, action: "ACCEPT" | "REJECT") {
+    const current = await quoteRequestData.findForUser(id, userId);
+    if (!current) throw new Error("QUOTE_REQUEST_NOT_FOUND");
+    if (current.status !== "QUOTED") throw new Error("QUOTE_NOT_AWAITING_RESPONSE");
+    if (current.validUntil && current.validUntil < new Date()) throw new Error("QUOTE_EXPIRED");
+    return mapQuoteRequest(await quoteRequestData.respond(id, action === "ACCEPT" ? "ACCEPTED" : "REJECTED"));
   },
   async convertQuotation(id: number, input: ConvertQuotationInput) {
     const current = await quoteRequestData.findById(id);

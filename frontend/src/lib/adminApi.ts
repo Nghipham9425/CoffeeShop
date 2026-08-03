@@ -201,6 +201,7 @@ export type BusinessCustomer = {
 
 export type B2BContract = {
   id: number; contractCode: string; title: string; totalValue: number | null; depositPercent: number;
+  startDate: string | null; endDate: string | null; paymentTermDays: number;
   status: "DRAFT" | "ACTIVE" | "COMPLETED" | "CANCELLED"; note: string | null; createdAt: string;
   businessCustomer: { id: number; companyName: string; contactName: string };
 };
@@ -618,7 +619,7 @@ export const adminApi = {
     });
   },
   b2bOverview(token: string) { return request<B2BOverview>("/b2b", { headers: authHeaders(token) }); },
-  updateB2BContract(token: string, id: number, payload: { status: B2BContract["status"]; note?: string }) { return request<B2BContract>(`/b2b/contracts/${id}`, { method: "PATCH", headers: authHeaders(token), body: JSON.stringify(payload) }); },
+  updateB2BContract(token: string, id: number, payload: { status?: B2BContract["status"]; startDate?: string; endDate?: string; depositPercent?: number; paymentTermDays?: number; note?: string }) { return request<B2BContract>(`/b2b/contracts/${id}`, { method: "PATCH", headers: authHeaders(token), body: JSON.stringify(payload) }); },
   createB2BInvoice(token: string, payload: { businessCustomerId: number; contractId?: number; amount: number; dueDate?: string; note?: string }) { return request<B2BInvoice>("/b2b/invoices", { method: "POST", headers: authHeaders(token), body: JSON.stringify(payload) }); },
   recordDebtPayment(token: string, debtId: number, payload: { amount: number; transactionCode?: string; paidAt?: string; note?: string }) { return request<B2BDebt>(`/b2b/debts/${debtId}/payments`, { method: "POST", headers: authHeaders(token), body: JSON.stringify(payload) }); },
 

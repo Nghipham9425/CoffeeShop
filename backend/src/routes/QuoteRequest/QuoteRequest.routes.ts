@@ -2,13 +2,14 @@ import { Router } from "express";
 import { UserRole } from "@prisma/client";
 import { quoteRequestController } from "../../controllers/QuoteRequest/QuoteRequest.controller.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
-import { authMiddleware, authorizeRoles } from "../../middleware/authMiddleware.js";
+import { authMiddleware, authorizeRoles, optionalAuthMiddleware } from "../../middleware/authMiddleware.js";
 
 export const quoteRequestRoutes = Router();
 
-quoteRequestRoutes.post("/", asyncHandler(quoteRequestController.createQuoteRequest));
+quoteRequestRoutes.post("/", optionalAuthMiddleware, asyncHandler(quoteRequestController.createQuoteRequest));
 quoteRequestRoutes.get("/public/:id", asyncHandler(quoteRequestController.getPublicQuote));
 quoteRequestRoutes.post("/public/:id/respond", asyncHandler(quoteRequestController.respondQuotation));
+quoteRequestRoutes.post("/mine/:id/respond", authMiddleware, asyncHandler(quoteRequestController.respondQuotationForUser));
 quoteRequestRoutes.get(
   "/",
   authMiddleware,

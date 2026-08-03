@@ -16,7 +16,7 @@ const CustomerChatbot = () => {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<number | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [canViewHistory, setCanViewHistory] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -56,19 +56,26 @@ const CustomerChatbot = () => {
     return headers;
   };
 
+  const resetStaleConversation = () => {
+    localStorage.removeItem('customer_chatbot_conv_id');
+    setConversationId(null);
+    setMessages([{ id: 'welcome', sender: 'BOT', content: 'Xin chào! Mình là trợ lý AI của Phú Tài Coffee Works. Bạn cần tư vấn về cà phê hay đặt hàng không ạ?' }]);
+  };
+
   // Kiểm tra trạng thái đăng nhập khi mở khung chat
   useEffect(() => {
     const token = getAuthToken();
-    setIsLoggedIn(!!token);
-    if (token) {
-      fetchConversationsList(token);
+    const guestToken = localStorage.getItem('customer_chatbot_guest_token');
+    setCanViewHistory(Boolean(token || guestToken));
+    if (token || guestToken) {
+      fetchConversationsList();
     }
   }, [isOpen]);
 
-  const fetchConversationsList = async (token: string) => {
+  const fetchConversationsList = async () => {
     try {
       const res = await fetch(`${API_URL}/chatbot/conversations`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: getChatHeaders()
       });
       const json = await res.json();
       if (json.success) {
@@ -93,6 +100,8 @@ const CustomerChatbot = () => {
           content: msg.content
         }));
         setMessages(historyMessages);
+      } else if (res.status === 401 || res.status === 403) {
+        resetStaleConversation();
       }
     } catch (error) {
       console.error('Không thể tải lịch sử đoạn chat:', error);
@@ -195,8 +204,8 @@ const CustomerChatbot = () => {
           content: json.data.content 
         };
         setMessages(prev => [...prev, newBotMsg]);
-        if (token) {
-          fetchConversationsList(token); // Cập nhật lại tiêu đề tự động trên lịch sử
+        if (token || localStorage.getItem('customer_chatbot_guest_token')) {
+          fetchConversationsList(); // Cập nhật lại tiêu đề tự động trên lịch sử
         }
       } else {
         throw new Error(json.message);
@@ -247,9 +256,9 @@ const CustomerChatbot = () => {
 
             <div className="flex items-center gap-2">
               {/* Nút xem lịch sử (Chỉ hiện khi đã đăng nhập và đang ở màn hình chat) */}
-              {isLoggedIn && view === 'chat' && (
+              {canViewHistory && view === 'chat' && (
                 <button 
-                  onClick={() => { fetchConversationsList(getAuthToken()); setView('history'); }} 
+                  onClick={() => { fetchConversationsList(); setView('history'); }} 
                   className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                   title="Xem lịch sử trò chuyện"
                 >

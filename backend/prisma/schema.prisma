@@ -135,6 +135,11 @@ enum ReturnRequestType {
   REFUND
 }
 
+enum LoyaltyTransactionType {
+  EARN
+  REVERSE
+}
+
 enum ReturnRequestStatus {
   REQUESTED
   REVIEWING
@@ -165,12 +170,14 @@ model User {
   orders               Order[]
   reviews              Review[]
   loyaltyProfile       LoyaltyProfile?
+  loyaltyTransactions  LoyaltyPointTransaction[]
   chatbotConversations ChatbotConversation[]
   passwordResetTokens  PasswordResetToken[]
   oauthAccounts        OAuthAccount[]
   returnRequests       ReturnRequest[]
   priceAdjustments     PriceAdjustment[]
   notifications        Notification[]
+  businessCustomer     BusinessCustomer?
 
   @@map("users")
 }
@@ -398,6 +405,7 @@ model Order {
   shipment        Shipment?
   reviews         Review[]
   returnRequests  ReturnRequest[]
+  loyaltyTransactions LoyaltyPointTransaction[]
 
   @@map("orders")
 }
@@ -499,8 +507,25 @@ model LoyaltyProfile {
   @@map("loyalty_profiles")
 }
 
+model LoyaltyPointTransaction {
+  id        Int                    @id @default(autoincrement())
+  userId    Int                    @map("user_id")
+  orderId   Int                    @map("order_id")
+  type      LoyaltyTransactionType
+  points    Int
+  note      String?
+  createdAt DateTime               @default(now()) @map("created_at")
+  user      User                   @relation(fields: [userId], references: [id])
+  order     Order                  @relation(fields: [orderId], references: [id])
+
+  @@unique([orderId, type])
+  @@index([userId, createdAt])
+  @@map("loyalty_point_transactions")
+}
+
 model BusinessCustomer {
   id            Int            @id @default(autoincrement())
+  userId        Int?           @unique @map("user_id")
   companyName   String         @map("company_name")
   taxCode       String?        @unique @map("tax_code")
   contactName   String         @map("contact_name")
@@ -515,6 +540,7 @@ model BusinessCustomer {
   invoices      Invoice[]
   debts         Debt[]
   orders        Order[]
+  user          User?          @relation(fields: [userId], references: [id])
 
   @@map("business_customers")
 }
@@ -574,6 +600,7 @@ model Contract {
   endDate            DateTime?        @map("end_date")
   totalValue         Decimal?         @map("total_value") @db.Decimal(14, 2)
   depositPercent     Int              @default(30) @map("deposit_percent")
+  paymentTermDays    Int              @default(30) @map("payment_term_days")
   status             ContractStatus   @default(DRAFT)
   note               String?
   createdAt          DateTime         @default(now()) @map("created_at")

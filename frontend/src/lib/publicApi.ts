@@ -185,9 +185,10 @@ export const publicApi = {
     return request<TrackedOrder>(`/orders/track?code=${encodeURIComponent(code)}`);
   },
 
-  createQuoteRequest(payload: QuoteRequestPayload) {
+  createQuoteRequest(payload: QuoteRequestPayload, token?: string | null) {
     return request<{ id: number; accessToken: string }>("/quote-requests", {
       method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       body: JSON.stringify(payload),
     });
   },

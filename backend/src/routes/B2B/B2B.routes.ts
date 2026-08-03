@@ -5,6 +5,8 @@ import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { authMiddleware, authorizeRoles } from "../../middleware/authMiddleware.js";
 
 export const b2bRoutes = Router();
+ 
+b2bRoutes.get("/me", authMiddleware, asyncHandler(b2bController.getMine));
 b2bRoutes.use(authMiddleware, authorizeRoles(UserRole.ADMIN, UserRole.SALES, UserRole.ACCOUNTANT));
 b2bRoutes.get("/", asyncHandler(b2bController.list));
 b2bRoutes.patch("/contracts/:id", asyncHandler(b2bController.updateContract));

@@ -5,6 +5,7 @@ import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
 import { Card, CardContent } from "../../../components/ui/card";
 import { publicApi } from "../../../lib/publicApi";
+import { adminAuth } from "../../../lib/adminApi";
 
 type QuoteForm = { companyName: string; contactName: string; phoneOrEmail: string; productNeed: string; expectedQuantityKg: string; note: string };
 const initialForm: QuoteForm = { companyName: "", contactName: "", phoneOrEmail: "", productNeed: "", expectedQuantityKg: "", note: "" };
@@ -16,6 +17,7 @@ export function QuotePage() {
   const [success, setSuccess] = useState("");
   const [trackingUrl, setTrackingUrl] = useState("");
   const set = (field: keyof QuoteForm, value: string) => setForm((current) => ({ ...current, [field]: value }));
+  const user = adminAuth.getUser();
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError(""); setSuccess(""); setTrackingUrl("");
@@ -23,7 +25,7 @@ export function QuotePage() {
     if (form.expectedQuantityKg && (!Number.isInteger(Number(form.expectedQuantityKg)) || Number(form.expectedQuantityKg) <= 0)) { setError("Số lượng dự kiến phải là số nguyên lớn hơn 0."); return; }
     setSubmitting(true);
     try {
-      const quote = await publicApi.createQuoteRequest({ companyName: form.companyName.trim(), contactName: form.contactName.trim(), phoneOrEmail: form.phoneOrEmail.trim(), productNeed: form.productNeed.trim(), expectedQuantityKg: form.expectedQuantityKg ? Number(form.expectedQuantityKg) : undefined, note: form.note.trim() || undefined });
+      const quote = await publicApi.createQuoteRequest({ companyName: form.companyName.trim(), contactName: form.contactName.trim(), phoneOrEmail: form.phoneOrEmail.trim(), productNeed: form.productNeed.trim(), expectedQuantityKg: form.expectedQuantityKg ? Number(form.expectedQuantityKg) : undefined, note: form.note.trim() || undefined }, adminAuth.getToken());
       setForm(initialForm); setSuccess(`Yêu cầu báo giá #${quote.id} đã được gửi. Bộ phận kinh doanh sẽ phản hồi sớm nhất.`); setTrackingUrl(`/bao-gia/${quote.id}?token=${encodeURIComponent(quote.accessToken)}`);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Không thể gửi yêu cầu báo giá."); }
     finally { setSubmitting(false); }
@@ -40,8 +42,8 @@ export function QuotePage() {
       <Card className="border-[#e7d7ca] bg-white shadow-sm"><CardContent className="p-6 md:p-8"><div className="flex items-start gap-3"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#f5e8db] text-[#6b3d27]"><ClipboardList size={21} /></span><div><h2 className="text-2xl font-black text-[#2d1b13]">Gửi yêu cầu báo giá</h2><p className="mt-1 text-sm leading-6 text-stone-500">Thông tin càng rõ, báo giá và phương án đề xuất càng sát nhu cầu.</p></div></div>
         <form className="mt-7 grid gap-4 md:grid-cols-2" onSubmit={submit}>
           <Field label="Tên công ty / đơn vị *" value={form.companyName} onChange={(value) => set("companyName", value)} placeholder="Ví dụ: Công ty TNHH Minh Phát" />
-          <Field label="Người liên hệ *" value={form.contactName} onChange={(value) => set("contactName", value)} placeholder="Ví dụ: Trần Phú Tài" />
-          <Field label="Số điện thoại / email *" value={form.phoneOrEmail} onChange={(value) => set("phoneOrEmail", value)} placeholder="Ví dụ: 089438439 hoặc sales@congty.vn" />
+          <Field label="Người liên hệ *" value={form.contactName} onChange={(value) => set("contactName", value)} placeholder={user?.fullName ?? "Ví dụ: Trần Phú Tài"} />
+          <Field label="Số điện thoại / email *" value={form.phoneOrEmail} onChange={(value) => set("phoneOrEmail", value)} placeholder={user?.phone ?? user?.email ?? "Ví dụ: 089438439 hoặc sales@congty.vn"} />
           <Field label="Sản lượng dự kiến (kg)" value={form.expectedQuantityKg} onChange={(value) => set("expectedQuantityKg", value)} placeholder="Ví dụ: 500" type="number" />
           <div className="md:col-span-2"><Field label="Sản phẩm cần báo giá *" value={form.productNeed} onChange={(value) => set("productNeed", value)} placeholder="Ví dụ: Arabica rang vừa, cà phê blend hoặc gia công OEM" /></div>
           <label className="grid gap-2 text-sm font-bold text-stone-700 md:col-span-2"><span>Yêu cầu thêm</span><textarea className="min-h-32 rounded-xl border border-stone-200 px-4 py-3 outline-none transition focus:border-[#a96f3e] focus:ring-2 focus:ring-[#f1dfcd]" value={form.note} onChange={(event) => set("note", event.target.value)} placeholder="Quy cách bao bì, khu vực giao hàng, thời gian cần hàng, yêu cầu mẫu thử hoặc nhãn riêng..." /></label>

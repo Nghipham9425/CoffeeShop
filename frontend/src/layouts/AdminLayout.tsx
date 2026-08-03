@@ -41,7 +41,7 @@ export function AdminLayout() {
     [token, user, sessionVersion, setSession, clearSession],
   );
 
-  const allowedRoles = ["ADMIN", "SALES", "WAREHOUSE", "MARKETING"];
+  const allowedRoles = ["ADMIN", "SALES", "WAREHOUSE", "MARKETING", "ACCOUNTANT"];
 
   if (!token || !user || !allowedRoles.includes(user.role)) {
     adminAuth.clearSession();

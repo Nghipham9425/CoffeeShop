@@ -30,6 +30,12 @@ import { QuoteTrackingPage } from "./pages/client/Quote/QuoteTrackingPage";
 import { AddressesPage } from "./pages/client/Account/AddressesPage";
 import { ProfilePage } from "./pages/client/Account/ProfilePage";
 import { OrderHistoryPage } from "./pages/client/Account/OrderHistoryPage";
+import { B2BDashboardPage } from "./pages/client/Account/B2BDashboardPage";
+import { B2BQuotesPage } from "./pages/client/Account/B2BQuotesPage";
+import { B2BQuoteDetailPage } from "./pages/client/Account/B2BQuoteDetailPage";
+import { B2BContractsPage } from "./pages/client/Account/B2BContractsPage";
+import { B2BDebtsPage } from "./pages/client/Account/B2BDebtsPage";
+import { B2BFinancePage } from "./pages/admin/b2b/B2BFinancePage";
 import PromotionsPage from './pages/admin/promotions/PromotionsPage';
 import { PricingPage } from './pages/admin/pricing/PricingPage';
 import { ReturnsPage } from './pages/admin/returns/ReturnsPage';
@@ -52,6 +58,11 @@ export default function App() {
         <Route path="/tai-khoan/thong-tin" element={<ProfilePage />} />
         <Route path="/tai-khoan/don-hang" element={<OrderHistoryPage />} />
         <Route path="/tai-khoan/dia-chi" element={<AddressesPage />} />
+        <Route path="/tai-khoan/b2b" element={<B2BDashboardPage />} />
+        <Route path="/tai-khoan/b2b/bao-gia" element={<B2BQuotesPage />} />
+        <Route path="/tai-khoan/b2b/bao-gia/:id" element={<B2BQuoteDetailPage />} />
+        <Route path="/tai-khoan/b2b/hop-dong" element={<B2BContractsPage />} />
+        <Route path="/tai-khoan/b2b/cong-no" element={<B2BDebtsPage />} />
         <Route path="/dich-vu" element={<Navigate to="/ve-nha-may" replace />} />
         <Route path="/bao-gia" element={<QuotePage />} />
         <Route path="/bao-gia/:id" element={<QuoteTrackingPage />} />
@@ -74,6 +85,7 @@ export default function App() {
         <Route path="don-hang/:id" element={<AdminOrderDetailPage />} />
         <Route path="bao-gia" element={<AdminQuotesPage />} />
         <Route path="bao-gia/:id" element={<AdminQuoteDetailPage />} />
+        <Route path="b2b/tai-chinh" element={<B2BFinancePage />} />
         <Route path="khach-hang" element={<AdminCustomersPage />} />
         <Route path="kho" element={<AdminInventoryPage />} />
         <Route path="lien-he" element={<Navigate to="/admin/bao-gia" replace />} />

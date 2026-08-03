@@ -66,6 +66,37 @@ export type CustomerOrderHistory = {
   } | null;
 };
 
+export type CustomerB2BQuote = {
+  id: number;
+  companyName: string;
+  productNeed: string;
+  expectedQuantityKg: number | null;
+  status: "NEW" | "CONTACTED" | "QUOTED" | "ACCEPTED" | "REJECTED" | "CONVERTED" | "CLOSED" | "CANCELLED";
+  subtotal: number;
+  discountAmount: number;
+  totalAmount: number;
+  validUntil: string | null;
+  salesNote: string | null;
+  createdAt: string;
+  items: Array<{ id: number; description: string; quantity: number; unit: string; unitPrice: number; lineTotal: number }>;
+  contract: { id: number; contractCode: string; status: string } | null;
+  order: { id: number; orderCode: string; status: string } | null;
+};
+
+export type CustomerB2BOverview = {
+  id: number;
+  companyName: string;
+  taxCode: string | null;
+  contactName: string;
+  phone: string;
+  email: string | null;
+  address: string | null;
+  quoteRequests: CustomerB2BQuote[];
+  contracts: Array<{ id: number; contractCode: string; title: string; totalValue: number | null; depositPercent: number; status: "DRAFT" | "ACTIVE" | "COMPLETED" | "CANCELLED"; note: string | null; createdAt: string }>;
+  invoices: Array<{ id: number; invoiceCode: string; amount: number; paidAmount: number; dueDate: string | null; status: "UNPAID" | "PARTIAL" | "PAID" | "OVERDUE" | "CANCELLED"; note: string | null; createdAt: string; contract: { id: number; contractCode: string } | null }>;
+  debts: Array<{ id: number; debtCode: string; originalAmount: number; remainingAmount: number; dueDate: string | null; status: "OPEN" | "PARTIAL" | "CLEARED" | "OVERDUE"; note: string | null; createdAt: string; invoice: { id: number; invoiceCode: string; amount: number; paidAmount: number } | null; payments: Array<{ id: number; amount: number; transactionCode: string | null; paidAt: string; note: string | null }> }>;
+} | null;
+
 async function request<T>(path: string, options: RequestInit = {}) {
   const token = adminAuth.getToken();
   if (!token) throw new Error("Vui lòng đăng nhập để tiếp tục.");
@@ -93,6 +124,8 @@ export const profileApi = {
   updateAddress: (id: number, payload: Partial<AddressPayload>) => request<ProfileAddress>(`/auth/me/addresses/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
   deleteAddress: (id: number) => request<void>(`/auth/me/addresses/${id}`, { method: "DELETE" }),
   orderHistory: () => request<CustomerOrderHistory[]>("/auth/me/orders"),
+  b2bOverview: () => request<CustomerB2BOverview>("/b2b/me"),
+  respondB2BQuote: (id: number, action: "ACCEPT" | "REJECT") => request<CustomerB2BQuote>(`/quote-requests/mine/${id}/respond`, { method: "POST", body: JSON.stringify({ action }) }),
   createReview: (payload: { orderId: number; productId: number; rating: number; content?: string }) =>
     request<{ id: number; rating: number; status: "PENDING" | "APPROVED" | "REJECTED" }>("/reviews", {
       method: "POST",

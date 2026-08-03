@@ -19,6 +19,35 @@ const orderInclude = {
   shipment: true,
 } satisfies Prisma.OrderInclude;
 
+function loyaltyTier(totalSpent: number) {
+  return totalSpent >= 30_000_000 ? "VIP" : totalSpent >= 10_000_000 ? "GOLD" : totalSpent >= 3_000_000 ? "SILVER" : "REGULAR";
+}
+
+async function awardLoyaltyPoints(tx: Prisma.TransactionClient, userId: number, orderId: number, totalAmount: number) {
+  const alreadyAwarded = await tx.loyaltyPointTransaction.findUnique({ where: { orderId_type: { orderId, type: "EARN" } } });
+  if (alreadyAwarded) return;
+  const points = Math.floor(totalAmount / 10_000);
+  const existing = await tx.loyaltyProfile.findUnique({ where: { userId } });
+  const totalSpent = Number(existing?.totalSpent ?? 0) + totalAmount;
+  await tx.loyaltyPointTransaction.create({ data: { userId, orderId, type: "EARN", points, note: "Loyalty points earned from completed order" } });
+  await tx.loyaltyProfile.upsert({
+    where: { userId },
+    create: { userId, totalSpent: totalAmount, points, orderCount: 1, tier: loyaltyTier(totalAmount), lastPurchaseAt: new Date() },
+    update: { totalSpent, points: { increment: points }, orderCount: { increment: 1 }, tier: loyaltyTier(totalSpent), lastPurchaseAt: new Date() },
+  });
+}
+
+async function reverseLoyaltyPoints(tx: Prisma.TransactionClient, userId: number, orderId: number, totalAmount: number) {
+  const earned = await tx.loyaltyPointTransaction.findUnique({ where: { orderId_type: { orderId, type: "EARN" } } });
+  const alreadyReversed = await tx.loyaltyPointTransaction.findUnique({ where: { orderId_type: { orderId, type: "REVERSE" } } });
+  if (!earned || alreadyReversed) return;
+  const current = await tx.loyaltyProfile.findUnique({ where: { userId } });
+  if (!current) return;
+  const totalSpent = Math.max(0, Number(current.totalSpent) - totalAmount);
+  await tx.loyaltyPointTransaction.create({ data: { userId, orderId, type: "REVERSE", points: -earned.points, note: "Loyalty points reversed after refund" } });
+  await tx.loyaltyProfile.update({ where: { userId }, data: { totalSpent, points: Math.max(0, current.points - earned.points), orderCount: { decrement: Math.min(1, current.orderCount) }, tier: loyaltyTier(totalSpent) } });
+}
+
 const defaultWarehouse = "Kho thành phẩm";
 
 async function restoreOrderStock(
@@ -182,6 +211,7 @@ export const orderData = {
           where: { id: request.orderId },
           data: { refundAmount: request.order.totalAmount },
         });
+        await reverseLoyaltyPoints(tx, request.userId, request.orderId, Number(request.order.totalAmount));
       }
 
       return tx.returnRequest.findUniqueOrThrow({
@@ -248,17 +278,7 @@ export const orderData = {
         include: orderInclude,
       });
       if (order.channel === "B2C" && order.userId) {
-        const existing = await tx.loyaltyProfile.findUnique({ where: { userId: order.userId } });
-        const totalSpent = Number(existing?.totalSpent ?? 0) + Number(order.totalAmount);
-        const points = (existing?.points ?? 0) + Math.floor(Number(order.totalAmount) / 10_000);
-        const tier = totalSpent >= 30_000_000 ? "VIP"
-          : totalSpent >= 10_000_000 ? "GOLD"
-            : totalSpent >= 3_000_000 ? "SILVER" : "REGULAR";
-        await tx.loyaltyProfile.upsert({
-          where: { userId: order.userId },
-          create: { userId: order.userId, totalSpent: order.totalAmount, points: Math.floor(Number(order.totalAmount) / 10_000), orderCount: 1, tier, lastPurchaseAt: new Date() },
-          update: { totalSpent, points, orderCount: { increment: 1 }, tier, lastPurchaseAt: new Date() },
-        });
+        await awardLoyaltyPoints(tx, order.userId, order.id, Number(order.totalAmount));
       }
       return order;
     });

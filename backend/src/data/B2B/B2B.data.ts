@@ -1,16 +1,44 @@
 import { prisma } from "../prisma.js";
-import type { CreateInvoiceInput, RecordDebtPaymentInput } from "../../validators/B2B/B2B.validator.js";
+import type { CreateInvoiceInput, RecordDebtPaymentInput, UpdateContractInput } from "../../validators/B2B/B2B.validator.js";
 
 const contractInclude = { businessCustomer: { select: { id: true, companyName: true, contactName: true } }, quoteRequest: { select: { id: true, productNeed: true } } };
 const invoiceInclude = { businessCustomer: { select: { id: true, companyName: true } }, contract: { select: { id: true, contractCode: true } }, debts: { include: { payments: { orderBy: { paidAt: "desc" as const } } } } };
+const quoteIncludeForCustomer = {
+  items: { include: { product: { select: { id: true, name: true, unit: true } } }, orderBy: { id: "asc" as const } },
+  contract: { select: { id: true, contractCode: true, status: true } },
+  order: { select: { id: true, orderCode: true, status: true } },
+};
 
 export const b2bData = {
   listContracts: () => prisma.contract.findMany({ include: contractInclude, orderBy: { createdAt: "desc" } }),
-  updateContract: (id: number, data: { status: "DRAFT" | "ACTIVE" | "COMPLETED" | "CANCELLED"; note?: string }) => prisma.contract.update({ where: { id }, data, include: contractInclude }),
+  findContract: (id: number) => prisma.contract.findUnique({ where: { id }, include: { invoices: { select: { status: true, debts: { select: { remainingAmount: true } } } } } }),
+  updateContract: (id: number, data: UpdateContractInput) => prisma.contract.update({ where: { id }, data, include: contractInclude }),
   listInvoices: () => prisma.invoice.findMany({ include: invoiceInclude, orderBy: { createdAt: "desc" } }),
   listDebts: () => prisma.debt.findMany({ include: { businessCustomer: { select: { id: true, companyName: true } }, invoice: { select: { id: true, invoiceCode: true, amount: true, paidAmount: true } }, payments: { orderBy: { paidAt: "desc" } } }, orderBy: { createdAt: "desc" } }),
+  async getForUser(userId: number) {
+    const businessCustomer = await prisma.businessCustomer.findUnique({
+      where: { userId },
+      include: {
+        quoteRequests: { include: quoteIncludeForCustomer, orderBy: { createdAt: "desc" } },
+        contracts: { include: contractInclude, orderBy: { createdAt: "desc" } },
+        invoices: { include: invoiceInclude, orderBy: { createdAt: "desc" } },
+        debts: { include: { invoice: { select: { id: true, invoiceCode: true, amount: true, paidAmount: true } }, payments: { orderBy: { paidAt: "desc" } } }, orderBy: { createdAt: "desc" } },
+      },
+    });
+    return businessCustomer;
+  },
   async createInvoice(input: CreateInvoiceInput) {
     return prisma.$transaction(async (tx) => {
+      if (input.contractId) {
+        const contract = await tx.contract.findUnique({ where: { id: input.contractId }, select: { businessCustomerId: true, status: true, totalValue: true, paymentTermDays: true, endDate: true } });
+        if (!contract || contract.businessCustomerId !== input.businessCustomerId) throw new Error("CONTRACT_NOT_FOUND");
+        if (contract.status !== "ACTIVE") throw new Error("CONTRACT_NOT_ACTIVE");
+        if (!input.dueDate || input.dueDate < new Date(new Date().setHours(0, 0, 0, 0))) throw new Error("INVOICE_DUE_DATE_INVALID");
+        const maxDueDate = new Date(); maxDueDate.setDate(maxDueDate.getDate() + contract.paymentTermDays);
+        if (input.dueDate > maxDueDate || (contract.endDate && input.dueDate > contract.endDate)) throw new Error("PAYMENT_TERM_EXCEEDED");
+        const invoiced = await tx.invoice.aggregate({ where: { contractId: input.contractId, status: { not: "CANCELLED" } }, _sum: { amount: true } });
+        if (!contract.totalValue || Number(invoiced._sum.amount ?? 0) + input.amount > Number(contract.totalValue)) throw new Error("INVOICE_EXCEEDS_CONTRACT_VALUE");
+      }
       const invoiceCode = `HD${Date.now().toString().slice(-10)}`;
       const debtCode = `CN${Date.now().toString().slice(-10)}`;
       const invoice = await tx.invoice.create({ data: { ...input, invoiceCode }, include: invoiceInclude });

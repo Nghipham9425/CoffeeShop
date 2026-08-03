@@ -23,7 +23,7 @@ export const quoteRequestController = {
   },
 
   async createQuoteRequest(req: Request, res: Response) {
-    const result = await quoteRequestService.createQuoteRequest(createQuoteRequestSchema.parse(req.body));
+    const result = await quoteRequestService.createQuoteRequest(createQuoteRequestSchema.parse(req.body), req.user?.userId);
     res.status(201).json({ ...result.quote, accessToken: result.accessToken });
   },
 
@@ -47,6 +47,15 @@ export const quoteRequestController = {
   async respondQuotation(req: Request, res: Response) {
     try {
       res.json(await quoteRequestService.respondQuotation(Number(req.params.id), respondQuotationSchema.parse(req.body)));
+    } catch (error) {
+      handleQuoteError(error, res);
+    }
+  },
+
+  async respondQuotationForUser(req: Request, res: Response) {
+    try {
+      const action = respondQuotationSchema.pick({ action: true }).parse(req.body).action;
+      res.json(await quoteRequestService.respondQuotationForUser(Number(req.params.id), req.user!.userId, action));
     } catch (error) {
       handleQuoteError(error, res);
     }
