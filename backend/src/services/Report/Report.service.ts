@@ -12,7 +12,6 @@ export const reportService = {
       pendingOrderCount: data.pendingOrderCount,
       completedOrderCount: data.completedOrderCount,
       quoteCount: data.quoteCount,
-      unreadContactCount: data.unreadContactCount,
       retailCustomerCount: data.retailCustomerCount,
       businessCustomerCount: data.businessCustomerCount,
       revenueLast30Days: Number(data.revenueLast30Days ?? 0),

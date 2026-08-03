@@ -144,14 +144,6 @@ enum ReturnRequestStatus {
   CANCELLED
 }
 
-enum PurchaseOrderStatus {
-  DRAFT
-  ORDERED
-  PARTIAL_RECEIVED
-  RECEIVED
-  CANCELLED
-}
-
 enum ProductPriceType {
   RETAIL
   WHOLESALE
@@ -284,7 +276,6 @@ model Product {
   inventories    Inventory[]
   stockMovements StockMovement[]
   reviews        Review[]
-  purchaseItems  PurchaseOrderItem[]
   prices         ProductPrice[]
   priceAdjustments PriceAdjustment[]
   quoteRequestItems QuoteRequestItem[]
@@ -337,7 +328,6 @@ model Inventory {
   warehouse   String   @default("Kho thành phẩm")
   updatedAt   DateTime @updatedAt @map("updated_at")
   product     Product  @relation(fields: [productId], references: [id])
-  orderItemAllocations OrderItemInventoryAllocation[]
 
   @@unique([productId, warehouse])
   @@map("inventories")
@@ -423,22 +413,7 @@ model OrderItem {
   lineTotal Decimal @map("line_total") @db.Decimal(12, 2)
   order     Order   @relation(fields: [orderId], references: [id])
   product   Product @relation(fields: [productId], references: [id])
-  allocations OrderItemInventoryAllocation[]
-
   @@map("order_items")
-}
-
-model OrderItemInventoryAllocation {
-  id          Int       @id @default(autoincrement())
-  orderItemId Int       @map("order_item_id")
-  inventoryId Int       @map("inventory_id")
-  quantity    Int
-  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
-  inventory   Inventory @relation(fields: [inventoryId], references: [id])
-
-  @@unique([orderItemId, inventoryId])
-  @@index([inventoryId])
-  @@map("order_item_inventory_allocations")
 }
 
 model Payment {
@@ -662,50 +637,6 @@ model DebtPayment {
   @@map("debt_payments")
 }
 
-model Supplier {
-  id             Int             @id @default(autoincrement())
-  name           String          @unique
-  phone          String?
-  email          String?
-  address        String?
-  note           String?
-  createdAt      DateTime        @default(now()) @map("created_at")
-  updatedAt      DateTime        @updatedAt @map("updated_at")
-  purchaseOrders PurchaseOrder[]
-
-  @@map("suppliers")
-}
-
-model PurchaseOrder {
-  id           Int                 @id @default(autoincrement())
-  supplierId   Int                 @map("supplier_id")
-  purchaseCode String              @unique @map("purchase_code")
-  expectedDate DateTime?           @map("expected_date")
-  receivedAt   DateTime?           @map("received_at")
-  totalAmount  Decimal             @default(0) @map("total_amount") @db.Decimal(14, 2)
-  status       PurchaseOrderStatus @default(DRAFT)
-  note         String?
-  createdAt    DateTime            @default(now()) @map("created_at")
-  updatedAt    DateTime            @updatedAt @map("updated_at")
-  supplier     Supplier            @relation(fields: [supplierId], references: [id])
-  items        PurchaseOrderItem[]
-
-  @@map("purchase_orders")
-}
-
-model PurchaseOrderItem {
-  id              Int           @id @default(autoincrement())
-  purchaseOrderId Int           @map("purchase_order_id")
-  productId       Int           @map("product_id")
-  quantity        Int
-  unitCost        Decimal       @map("unit_cost") @db.Decimal(12, 2)
-  lineTotal       Decimal       @map("line_total") @db.Decimal(14, 2)
-  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
-  product         Product       @relation(fields: [productId], references: [id])
-
-  @@map("purchase_order_items")
-}
-
 model ChatbotConversation {
   id          Int              @id @default(autoincrement())
   userId      Int?             @map("user_id")
@@ -732,17 +663,4 @@ model ChatbotMessage {
   conversation   ChatbotConversation @relation(fields: [conversationId], references: [id])
 
   @@map("chatbot_messages")
-}
-
-model ContactMessage {
-  id        Int      @id @default(autoincrement())
-  fullName  String   @map("full_name")
-  email     String?
-  phone     String?
-  subject   String?
-  message   String
-  isRead    Boolean  @default(false) @map("is_read")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("contact_messages")
 }

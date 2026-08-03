@@ -117,20 +117,6 @@ export const swaggerSpec = swaggerJsdoc({
             note: { type: "string", example: "Cần tư vấn profile rang và bao bì." },
           },
         },
-        ContactMessage: {
-          type: "object",
-          required: ["fullName", "message"],
-          properties: {
-            fullName: { type: "string", example: "Khách liên hệ demo" },
-            email: { type: "string", example: "contact@example.com" },
-            phone: { type: "string", example: "0909123456" },
-            subject: { type: "string", example: "Cần báo giá cà phê rang xay" },
-            message: {
-              type: "string",
-              example: "Tôi cần tư vấn mua sỉ cà phê rang xay cho chuỗi quán.",
-            },
-          },
-        },
         StatusUpdateRequest: {
           type: "object",
           required: ["status"],
@@ -483,77 +469,6 @@ export const swaggerSpec = swaggerJsdoc({
           responses: {
             "200": { description: "Cập nhật trạng thái thành công" },
             "404": { description: "Không tìm thấy yêu cầu báo giá" },
-          },
-        },
-      },
-      "/api/contact-messages": {
-        get: {
-          tags: ["Contact Messages"],
-          summary: "Lấy danh sách tin nhắn liên hệ",
-          security: [{ bearerAuth: [] }],
-          parameters: [
-            { name: "keyword", in: "query", schema: { type: "string" } },
-            { name: "isRead", in: "query", schema: { type: "boolean" } },
-          ],
-          responses: {
-            "200": { description: "Danh sách tin nhắn liên hệ" },
-          },
-        },
-        post: {
-          tags: ["Contact Messages"],
-          summary: "Khách gửi tin nhắn liên hệ",
-          requestBody: {
-            required: true,
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/ContactMessage" },
-              },
-            },
-          },
-          responses: {
-            "201": { description: "Gửi liên hệ thành công" },
-          },
-        },
-      },
-      "/api/contact-messages/{id}": {
-        get: {
-          tags: ["Contact Messages"],
-          summary: "Lấy chi tiết tin nhắn liên hệ",
-          security: [{ bearerAuth: [] }],
-          parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
-          responses: {
-            "200": { description: "Chi tiết tin nhắn liên hệ" },
-            "404": { description: "Không tìm thấy tin nhắn liên hệ" },
-          },
-        },
-        delete: {
-          tags: ["Contact Messages"],
-          summary: "Xóa tin nhắn liên hệ",
-          security: [{ bearerAuth: [] }],
-          parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
-          responses: {
-            "204": { description: "Xóa thành công" },
-            "404": { description: "Không tìm thấy tin nhắn liên hệ" },
-          },
-        },
-      },
-      "/api/contact-messages/{id}/read-status": {
-        patch: {
-          tags: ["Contact Messages"],
-          summary: "Đánh dấu đã đọc/chưa đọc tin nhắn liên hệ",
-          security: [{ bearerAuth: [] }],
-          parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
-          requestBody: {
-            required: true,
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/ReadStatusRequest" },
-              },
-            },
-          },
-          responses: {
-            "200": { description: "Cập nhật trạng thái đọc thành công" },
-            "404": { description: "Không tìm thấy tin nhắn liên hệ" },
           },
         },
       },

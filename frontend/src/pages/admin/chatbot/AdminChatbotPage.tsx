@@ -4,6 +4,8 @@ import { Card } from '../../../components/ui/card';
 import { Send, Bot, User, MessageSquare, Plus, Trash2 } from 'lucide-react';
 import { adminAuth } from '../../../lib/adminApi';
 
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000/api';
+
 type Message = { id: string; sender: 'USER' | 'BOT'; content: string };
 type Conversation = { id: number; topic: string; updatedAt: string };
 
@@ -46,7 +48,7 @@ const AdminChatbotPage = () => {
   const fetchConversationsList = async () => {
     try {
       const token = getAuthToken();
-      const res = await fetch('http://localhost:4000/api/chatbot/conversations', {
+      const res = await fetch(`${API_URL}/chatbot/conversations`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const json = await res.json();
@@ -59,7 +61,7 @@ const AdminChatbotPage = () => {
   const loadHistory = async (convId: number) => {
     try {
       const token = getAuthToken();
-      const res = await fetch(`http://localhost:4000/api/chatbot/${convId}/history`, {
+      const res = await fetch(`${API_URL}/chatbot/${convId}/history`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const json = await res.json();
@@ -102,7 +104,7 @@ const AdminChatbotPage = () => {
 
     try {
       const token = getAuthToken();
-      const res = await fetch(`http://localhost:4000/api/chatbot/${id}`, {
+      const res = await fetch(`${API_URL}/chatbot/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -152,7 +154,7 @@ const AdminChatbotPage = () => {
       } 
       // NẾU CHƯA CÓ ID (Tin nhắn đầu tiên)
       else {
-        const startRes = await fetch('http://localhost:4000/api/chatbot/start', {
+        const startRes = await fetch(`${API_URL}/chatbot/start`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ topic: 'Đoạn chat mới' })
@@ -169,7 +171,7 @@ const AdminChatbotPage = () => {
       }
 
       // LÚC NÀY TYPESCRIPT ĐÃ CHẮC CHẮN activeConvId LÀ NUMBER 100%
-      const res = await fetch('http://localhost:4000/api/chatbot/send', {
+      const res = await fetch(`${API_URL}/chatbot/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ conversationId: activeConvId, message: text })

@@ -174,9 +174,6 @@ export const quoteRequestData = {
             reference: orderCode,
           },
         });
-        await tx.orderItemInventoryAllocation.create({
-          data: { orderItemId: orderItem.id, inventoryId: inventory.id, quantity: orderItem.quantity },
-        });
       }
 
       await tx.quoteRequest.update({

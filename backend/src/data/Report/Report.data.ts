@@ -11,7 +11,6 @@ export const reportData = {
       pendingOrderCount,
       completedOrderCount,
       quoteCount,
-      unreadContactCount,
       retailCustomerCount,
       businessCustomerCount,
       lowStockItems,
@@ -25,7 +24,6 @@ export const reportData = {
       prisma.order.count({ where: { status: "PENDING" } }),
       prisma.order.count({ where: { status: "COMPLETED" } }),
       prisma.quoteRequest.count(),
-      prisma.contactMessage.count({ where: { isRead: false } }),
       prisma.user.count({ where: { role: "CUSTOMER" } }),
       prisma.businessCustomer.count(),
       prisma.inventory.findMany({
@@ -73,7 +71,6 @@ export const reportData = {
       pendingOrderCount,
       completedOrderCount,
       quoteCount,
-      unreadContactCount,
       retailCustomerCount,
       businessCustomerCount,
       revenueLast30Days: revenue._sum.totalAmount,

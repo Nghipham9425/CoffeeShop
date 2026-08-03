@@ -1,0 +1,377 @@
+@startuml
+title Class Diagram - Phú Tài Coffee Works (28 bảng)
+top to bottom direction
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+hide methods
+
+class User {
+  +id: Int <<PK>>
+  fullName: String
+  email: String <<unique>>
+  passwordHash: String
+  phone: String?
+  role: UserRole
+  isActive: Boolean
+  createdAt: DateTime
+}
+
+class Notification {
+  +id: Int <<PK>>
+  userId: Int <<FK>>
+  type: NotificationType
+  title: String
+  content: String
+  isRead: Boolean
+  createdAt: DateTime
+}
+
+class OAuthAccount {
+  +id: Int <<PK>>
+  userId: Int <<FK>>
+  provider: OAuthProvider
+  providerUserId: String
+  providerEmail: String?
+}
+
+class PasswordResetToken {
+  +id: Int <<PK>>
+  userId: Int <<FK>>
+  tokenHash: String <<unique>>
+  expiresAt: DateTime
+  usedAt: DateTime?
+}
+
+class Address {
+  +id: Int <<PK>>
+  userId: Int <<FK>>
+  receiverName: String
+  phone: String
+  province: String
+  district: String
+  ward: String
+  detail: String
+  isDefault: Boolean
+}
+
+class Category {
+  +id: Int <<PK>>
+  name: String
+  slug: String <<unique>>
+  description: String?
+  isActive: Boolean
+}
+
+class Product {
+  +id: Int <<PK>>
+  categoryId: Int <<FK>>
+  name: String
+  slug: String <<unique>>
+  description: String?
+  unit: String
+  retailUnitGram: Int
+  b2bUnitGram: Int
+  minimumOrderKg: Int
+  imageUrl: String?
+  isRetail: Boolean
+  isB2b: Boolean
+  isActive: Boolean
+}
+
+class ProductPrice {
+  +id: Int <<PK>>
+  productId: Int <<FK>>
+  priceType: ProductPriceType
+  minQuantity: Int
+  unitGram: Int
+  price: Decimal
+  startAt: DateTime?
+  endAt: DateTime?
+  isActive: Boolean
+}
+
+class PriceAdjustment {
+  +id: Int <<PK>>
+  productId: Int <<FK>>
+  createdById: Int? <<FK>>
+  priceType: ProductPriceType
+  minQuantity: Int
+  oldPrice: Decimal?
+  newPrice: Decimal
+  createdAt: DateTime
+}
+
+class Inventory {
+  +id: Int <<PK>>
+  productId: Int <<FK>>
+  quantity: Int
+  minQuantity: Int
+  warehouse: String
+  updatedAt: DateTime
+}
+
+class StockMovement {
+  +id: Int <<PK>>
+  productId: Int <<FK>>
+  type: StockMovementType
+  quantity: Int
+  warehouse: String
+  balanceAfter: Int?
+  reason: String?
+  reference: String?
+  createdAt: DateTime
+}
+
+class Promotion {
+  +id: Int <<PK>>
+  name: String
+  code: String? <<unique>>
+  discountType: DiscountType
+  discountValue: Decimal
+  minOrderAmount: Decimal?
+  startAt: DateTime
+  endAt: DateTime
+  status: PromotionStatus
+}
+
+class Order {
+  +id: Int <<PK>>
+  userId: Int? <<FK>>
+  addressId: Int? <<FK>>
+  promotionId: Int? <<FK>>
+  businessCustomerId: Int? <<FK>>
+  quoteRequestId: Int? <<FK, unique>>
+  channel: OrderChannel
+  orderCode: String <<unique>>
+  customerName: String
+  customerPhone: String
+  subtotal: Decimal
+  shippingFee: Decimal
+  discountAmount: Decimal
+  totalAmount: Decimal
+  status: OrderStatus
+}
+
+class OrderItem {
+  +id: Int <<PK>>
+  orderId: Int <<FK>>
+  productId: Int <<FK>>
+  quantity: Int
+  unitGram: Int
+  quantityGram: Int
+  unitPrice: Decimal
+  lineTotal: Decimal
+}
+
+class Payment {
+  +id: Int <<PK>>
+  orderId: Int <<FK>>
+  method: PaymentMethod
+  status: PaymentStatus
+  amount: Decimal
+  transactionCode: String?
+  paidAt: DateTime?
+}
+
+class Shipment {
+  +id: Int <<PK>>
+  orderId: Int <<FK, unique>>
+  carrier: String?
+  trackingCode: String?
+  status: ShipmentStatus
+  shippedAt: DateTime?
+  deliveredAt: DateTime?
+}
+
+class Review {
+  +id: Int <<PK>>
+  userId: Int <<FK>>
+  productId: Int <<FK>>
+  orderId: Int? <<FK>>
+  rating: Int
+  content: String?
+  status: ReviewStatus
+}
+
+class ReturnRequest {
+  +id: Int <<PK>>
+  userId: Int <<FK>>
+  orderId: Int <<FK>>
+  type: ReturnRequestType
+  reason: String
+  status: ReturnRequestStatus
+  resolutionNote: String?
+}
+
+class LoyaltyProfile {
+  +id: Int <<PK>>
+  userId: Int <<FK, unique>>
+  tier: String
+  points: Int
+  totalSpent: Decimal
+  orderCount: Int
+  lastPurchaseAt: DateTime?
+}
+
+class BusinessCustomer {
+  +id: Int <<PK>>
+  companyName: String
+  taxCode: String? <<unique>>
+  contactName: String
+  phone: String
+  email: String?
+  address: String?
+}
+
+class QuoteRequest {
+  +id: Int <<PK>>
+  businessCustomerId: Int? <<FK>>
+  companyName: String
+  contactName: String
+  phoneOrEmail: String
+  productNeed: String
+  expectedQuantityKg: Int?
+  subtotal: Decimal
+  discountAmount: Decimal
+  totalAmount: Decimal
+  validUntil: DateTime?
+  status: QuoteRequestStatus
+}
+
+class QuoteRequestItem {
+  +id: Int <<PK>>
+  quoteRequestId: Int <<FK>>
+  productId: Int? <<FK>>
+  description: String
+  quantity: Int
+  unit: String
+  unitPrice: Decimal
+  lineTotal: Decimal
+}
+
+class Contract {
+  +id: Int <<PK>>
+  businessCustomerId: Int <<FK>>
+  quoteRequestId: Int? <<FK, unique>>
+  contractCode: String <<unique>>
+  title: String
+  totalValue: Decimal?
+  depositPercent: Int?
+  status: ContractStatus
+}
+
+class Invoice {
+  +id: Int <<PK>>
+  businessCustomerId: Int <<FK>>
+  contractId: Int? <<FK>>
+  invoiceCode: String <<unique>>
+  amount: Decimal
+  paidAmount: Decimal
+  dueDate: DateTime?
+  status: InvoiceStatus
+}
+
+class Debt {
+  +id: Int <<PK>>
+  businessCustomerId: Int <<FK>>
+  invoiceId: Int? <<FK>>
+  debtCode: String <<unique>>
+  originalAmount: Decimal
+  remainingAmount: Decimal
+  dueDate: DateTime?
+  status: DebtStatus
+}
+
+class DebtPayment {
+  +id: Int <<PK>>
+  debtId: Int <<FK>>
+  amount: Decimal
+  transactionCode: String?
+  paidAt: DateTime
+}
+
+class ChatbotConversation {
+  +id: Int <<PK>>
+  userId: Int? <<FK>>
+  guestName: String?
+  guestPhone: String?
+  guestTokenHash: String? <<unique>>
+  topic: String?
+  isResolved: Boolean
+}
+
+class ChatbotMessage {
+  +id: Int <<PK>>
+  conversationId: Int <<FK>>
+  sender: ChatbotSender
+  content: String
+  intent: String?
+  createdAt: DateTime
+}
+
+User "1" -- "0..*" Notification
+User "1" -- "0..*" OAuthAccount
+User "1" -- "0..*" PasswordResetToken
+User "1" -- "0..*" Address
+User "1" -- "0..*" Order
+User "1" -- "0..*" Review
+User "1" -- "0..*" ReturnRequest
+User "1" -- "0..*" PriceAdjustment : createdBy
+User "1" -- "0..1" LoyaltyProfile
+User "1" -- "0..*" ChatbotConversation
+
+Category "1" -- "0..*" Product
+Product "1" -- "0..*" ProductPrice
+Product "1" -- "0..*" PriceAdjustment
+Product "1" -- "0..*" Inventory
+Product "1" -- "0..*" StockMovement
+Product "1" -- "0..*" OrderItem
+Product "1" -- "0..*" Review
+Product "1" -- "0..*" QuoteRequestItem
+
+Address "1" -- "0..*" Order
+Promotion "1" -- "0..*" Order
+BusinessCustomer "1" -- "0..*" QuoteRequest
+BusinessCustomer "1" -- "0..*" Order
+BusinessCustomer "1" -- "0..*" Contract
+BusinessCustomer "1" -- "0..*" Invoice
+BusinessCustomer "1" -- "0..*" Debt
+
+QuoteRequest "1" -- "0..*" QuoteRequestItem
+QuoteRequest "1" -- "0..1" Contract
+QuoteRequest "1" -- "0..1" Order
+Contract "1" -- "0..*" Invoice
+Invoice "1" -- "0..*" Debt
+Debt "1" -- "0..*" DebtPayment
+
+Order "1" -- "1..*" OrderItem
+Order "1" -- "0..*" Payment
+Order "1" -- "0..1" Shipment
+Order "1" -- "0..*" Review
+Order "1" -- "0..*" ReturnRequest
+OrderItem "0..*" -- "1" Product
+
+ChatbotConversation "1" -- "0..*" ChatbotMessage
+
+enum UserRole { ADMIN; SALES; WAREHOUSE; ACCOUNTANT; CUSTOMER }
+enum OAuthProvider { GOOGLE; FACEBOOK }
+enum ProductPriceType { RETAIL; WHOLESALE; VIP; B2B }
+enum StockMovementType { IMPORT; EXPORT; ADJUSTMENT; RETURN }
+enum DiscountType { PERCENT; FIXED_AMOUNT }
+enum PromotionStatus { DRAFT; ACTIVE; EXPIRED; DISABLED }
+enum OrderChannel { B2C; B2B }
+enum OrderStatus { PENDING; CONFIRMED; PACKING; SHIPPING; COMPLETED; CANCELLED }
+enum PaymentMethod { COD; BANK_TRANSFER; SEPAY; MOMO; VNPAY; ZALOPAY }
+enum PaymentStatus { PENDING; PAID; FAILED; REFUNDED }
+enum ShipmentStatus { WAITING; PACKED; SHIPPED; DELIVERED; RETURNED }
+enum ReviewStatus { PENDING; APPROVED; REJECTED }
+enum ReturnRequestType { RETURN; EXCHANGE; REFUND }
+enum ReturnRequestStatus { REQUESTED; REVIEWING; APPROVED; REJECTED; COMPLETED; CANCELLED }
+enum QuoteRequestStatus { NEW; CONTACTED; QUOTED; ACCEPTED; REJECTED; CONVERTED; CLOSED; CANCELLED }
+enum ContractStatus { DRAFT; ACTIVE; COMPLETED; CANCELLED }
+enum InvoiceStatus { UNPAID; PARTIAL; PAID; OVERDUE; CANCELLED }
+enum DebtStatus { OPEN; PARTIAL; CLEARED; OVERDUE }
+enum ChatbotSender { CUSTOMER; BOT; STAFF }
+enum NotificationType { ORDER_CREATED; ORDER_STATUS_CHANGED; PAYMENT_UPDATED; GENERAL }
+
+@enduml

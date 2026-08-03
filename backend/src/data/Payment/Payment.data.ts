@@ -61,7 +61,7 @@ export const paymentData = {
     return prisma.$transaction(async (tx) => {
       const order = await tx.order.findUnique({
         where: { id: orderId },
-        include: { items: { include: { allocations: { include: { inventory: true } } } }, payments: true },
+        include: { items: true, payments: true },
       });
       if (!order || order.status !== OrderStatus.PENDING) return false;
 
@@ -81,33 +81,12 @@ export const paymentData = {
       if (cancelledOrder.count !== 1) return false;
 
       for (const item of order.items) {
-        if (item.allocations.length) {
-          for (const allocation of item.allocations) {
-            const inventory = await tx.inventory.update({
-              where: { id: allocation.inventoryId },
-              data: { quantity: { increment: allocation.quantity } },
-            });
-            await tx.stockMovement.create({
-              data: {
-                productId: item.productId,
-                type: StockMovementType.RETURN,
-                quantity: allocation.quantity,
-                warehouse: allocation.inventory.warehouse,
-                balanceAfter: inventory.quantity,
-                reason: "Hoàn tồn do đơn SePay quá hạn thanh toán.",
-                reference: order.orderCode,
-              },
-            });
-          }
-          continue;
-        }
-        const inventory = await tx.inventory.findFirst({
-          where: { productId: item.productId },
-          orderBy: { quantity: "desc" },
+        const inventory = await tx.inventory.findUnique({
+          where: { productId_warehouse: { productId: item.productId, warehouse: "Kho thành phẩm" } },
         });
         if (!inventory) continue;
 
-        await tx.inventory.update({
+        const updatedInventory = await tx.inventory.update({
           where: { id: inventory.id },
           data: { quantity: { increment: item.quantity } },
         });
@@ -116,8 +95,8 @@ export const paymentData = {
             productId: item.productId,
             type: StockMovementType.RETURN,
             quantity: item.quantity,
-            warehouse: inventory.warehouse,
-            balanceAfter: inventory.quantity + item.quantity,
+            warehouse: "Kho thành phẩm",
+            balanceAfter: updatedInventory.quantity,
             reason: "Hoàn tồn do đơn SePay quá hạn thanh toán.",
             reference: order.orderCode,
           },

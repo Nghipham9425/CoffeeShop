@@ -71,17 +71,6 @@ export type QuoteRequest = {
   createdAt: string;
 };
 
-export type ContactMessage = {
-  id: number;
-  fullName: string;
-  email: string | null;
-  phone: string | null;
-  subject: string | null;
-  message: string;
-  isRead: boolean;
-  createdAt: string;
-};
-
 export type HealthStatus = {
   status: string;
   database: string;
@@ -236,7 +225,6 @@ export type ReportOverview = {
   pendingOrderCount: number;
   completedOrderCount: number;
   quoteCount: number;
-  unreadContactCount: number;
   retailCustomerCount: number;
   businessCustomerCount: number;
   revenueLast30Days: number;
@@ -524,27 +512,6 @@ export const adminApi = {
 
   convertQuotation(token: string, id: number, target: "CONTRACT" | "ORDER") {
     return request<{ target: string; id: number; code: string }>(`/quote-requests/${id}/convert`, { method: "POST", headers: authHeaders(token), body: JSON.stringify({ target }) });
-  },
-
-  contactMessages(token: string) {
-    return request<ContactMessage[]>("/contact-messages", {
-      headers: authHeaders(token),
-    });
-  },
-
-  updateContactReadStatus(token: string, id: number, isRead: boolean) {
-    return request<ContactMessage>(`/contact-messages/${id}/read-status`, {
-      method: "PATCH",
-      headers: authHeaders(token),
-      body: JSON.stringify({ isRead }),
-    });
-  },
-
-  deleteContactMessage(token: string, id: number) {
-    return request<void>(`/contact-messages/${id}`, {
-      method: "DELETE",
-      headers: authHeaders(token),
-    });
   },
 
   orders(token: string, params: { keyword?: string; status?: AdminOrder["status"] } = {}) {

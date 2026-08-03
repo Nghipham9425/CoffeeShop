@@ -14,10 +14,42 @@ import { PromotionService } from "../../services/Promotion/Promotion.service.js"
 const orderInclude = {
   user: { select: { id: true, fullName: true, email: true, phone: true } },
   promotion: true,
-  items: { include: { product: { select: { id: true, name: true, unit: true } }, allocations: true } },
+  items: { include: { product: { select: { id: true, name: true, unit: true } } } },
   payments: true,
   shipment: true,
 } satisfies Prisma.OrderInclude;
+
+const defaultWarehouse = "Kho thành phẩm";
+
+async function restoreOrderStock(
+  tx: Prisma.TransactionClient,
+  items: Array<{ productId: number; quantity: number }>,
+  orderCode: string,
+  reason: string,
+) {
+  for (const item of items) {
+    const inventory = await tx.inventory.findUnique({
+      where: { productId_warehouse: { productId: item.productId, warehouse: defaultWarehouse } },
+    });
+    if (!inventory) continue;
+
+    const updatedInventory = await tx.inventory.update({
+      where: { id: inventory.id },
+      data: { quantity: { increment: item.quantity } },
+    });
+    await tx.stockMovement.create({
+      data: {
+        productId: item.productId,
+        type: "RETURN",
+        quantity: item.quantity,
+        warehouse: defaultWarehouse,
+        balanceAfter: updatedInventory.quantity,
+        reason,
+        reference: orderCode,
+      },
+    });
+  }
+}
 
 function buildWhere(query: OrderQueryInput): Prisma.OrderWhereInput {
   return {
@@ -57,39 +89,12 @@ export const orderData = {
     return prisma.$transaction(async (tx) => {
       const order = await tx.order.findFirst({
         where: { id, userId, status: "PENDING" },
-        include: { items: { include: { allocations: { include: { inventory: true } } } }, payments: true },
+        include: { items: true, payments: true },
       });
       if (!order) throw new Error("ORDER_NOT_CANCELLABLE");
       if (order.payments.some((payment) => payment.status === "PAID")) throw new Error("PAID_ORDER_REQUIRES_REFUND_REQUEST");
 
-      for (const item of order.items) {
-        if (item.allocations.length) {
-          for (const allocation of item.allocations) {
-            const inventory = await tx.inventory.update({
-              where: { id: allocation.inventoryId },
-              data: { quantity: { increment: allocation.quantity } },
-            });
-            await tx.stockMovement.create({
-              data: {
-                productId: item.productId,
-                type: "RETURN",
-                quantity: allocation.quantity,
-                warehouse: allocation.inventory.warehouse,
-                balanceAfter: inventory.quantity,
-                reason: "Hoàn kho do khách hủy đơn",
-                reference: order.orderCode,
-              },
-            });
-          }
-          continue;
-        }
-        const inventory = await tx.inventory.findFirst({ where: { productId: item.productId }, orderBy: { quantity: "desc" } });
-        if (inventory) {
-          const quantity = item.quantity;
-          await tx.inventory.update({ where: { id: inventory.id }, data: { quantity: { increment: quantity } } });
-          await tx.stockMovement.create({ data: { productId: item.productId, type: "RETURN", quantity, warehouse: inventory.warehouse, balanceAfter: inventory.quantity + quantity, reason: "Hoàn kho do khách hủy đơn", reference: order.orderCode } });
-        }
-      }
+      await restoreOrderStock(tx, order.items, order.orderCode, "Hoàn kho do khách hủy đơn");
 
       await tx.payment.updateMany({ where: { orderId: id, status: "PENDING" }, data: { status: "FAILED" } });
       await tx.order.update({ where: { id }, data: { status: "CANCELLED", cancelReason: reason } });
@@ -101,53 +106,11 @@ export const orderData = {
     return prisma.$transaction(async (tx) => {
       const order = await tx.order.findFirst({
         where: { id, status: { in: ["PENDING", "CONFIRMED"] } },
-        include: { items: { include: { allocations: { include: { inventory: true } } } }, payments: true },
+        include: { items: true, payments: true },
       });
       if (!order) throw new Error("ORDER_NOT_CANCELLABLE");
 
-      for (const item of order.items) {
-        if (item.allocations.length) {
-          for (const allocation of item.allocations) {
-            const inventory = await tx.inventory.update({
-              where: { id: allocation.inventoryId },
-              data: { quantity: { increment: allocation.quantity } },
-            });
-            await tx.stockMovement.create({
-              data: {
-                productId: item.productId,
-                type: "RETURN",
-                quantity: allocation.quantity,
-                warehouse: allocation.inventory.warehouse,
-                balanceAfter: inventory.quantity,
-                reason: "Hoàn kho do quản trị viên hủy đơn",
-                reference: order.orderCode,
-              },
-            });
-          }
-          continue;
-        }
-        const inventory = await tx.inventory.findFirst({
-          where: { productId: item.productId },
-          orderBy: { quantity: "desc" },
-        });
-        if (!inventory) continue;
-
-        await tx.inventory.update({
-          where: { id: inventory.id },
-          data: { quantity: { increment: item.quantity } },
-        });
-        await tx.stockMovement.create({
-          data: {
-            productId: item.productId,
-            type: "RETURN",
-            quantity: item.quantity,
-            warehouse: inventory.warehouse,
-            balanceAfter: inventory.quantity + item.quantity,
-            reason: "Hoàn kho do quản trị viên hủy đơn",
-            reference: order.orderCode,
-          },
-        });
-      }
+      await restoreOrderStock(tx, order.items, order.orderCode, "Hoàn kho do quản trị viên hủy đơn");
 
       await tx.payment.updateMany({
         where: { orderId: id, status: "PENDING" },
@@ -192,7 +155,7 @@ export const orderData = {
         include: {
           order: {
             include: {
-              items: { include: { allocations: { include: { inventory: true } } } },
+              items: true,
               payments: true,
             },
           },
@@ -207,25 +170,7 @@ export const orderData = {
       if (completed.count !== 1) throw new Error("RETURN_REQUEST_ALREADY_PROCESSED");
 
       if (request.type === "RETURN") {
-        for (const item of request.order.items) {
-          for (const allocation of item.allocations) {
-            const inventory = await tx.inventory.update({
-              where: { id: allocation.inventoryId },
-              data: { quantity: { increment: allocation.quantity } },
-            });
-            await tx.stockMovement.create({
-              data: {
-                productId: item.productId,
-                type: "RETURN",
-                quantity: allocation.quantity,
-                warehouse: allocation.inventory.warehouse,
-                balanceAfter: inventory.quantity,
-                reason: "Hoàn kho theo yêu cầu trả hàng",
-                reference: request.order.orderCode,
-              },
-            });
-          }
-        }
+        await restoreOrderStock(tx, request.order.items, request.order.orderCode, "Hoàn kho theo yêu cầu trả hàng");
       }
 
       if (request.type === "RETURN" || request.type === "REFUND") {
@@ -383,9 +328,7 @@ export const orderData = {
             },
             orderBy: { minQuantity: "desc" },
           },
-          inventories: {
-            orderBy: { quantity: "desc" },
-          },
+          inventories: { where: { warehouse: defaultWarehouse }, take: 1 },
         },
       });
 
@@ -401,20 +344,10 @@ export const orderData = {
         }
 
         const quantityGram = item.quantity * 1000;
-        const totalStock = product.inventories.reduce((total, inventory) => total + inventory.quantity, 0);
-        if (totalStock < item.quantity) {
+        const inventory = product.inventories[0];
+        if (!inventory || inventory.quantity < item.quantity) {
           throw new Error(`INSUFFICIENT_STOCK:${product.name}`);
         }
-
-        let remainingQuantity = item.quantity;
-        const allocations = product.inventories
-          .filter((inventory) => inventory.quantity > 0)
-          .map((inventory) => {
-            const allocatedQuantity = Math.min(inventory.quantity, remainingQuantity);
-            remainingQuantity -= allocatedQuantity;
-            return { inventory, quantity: allocatedQuantity };
-          })
-          .filter((allocation) => allocation.quantity > 0);
 
         const matchedPrice = product.prices.find((price) => price.minQuantity <= item.quantity);
         const unitPrice = Number(matchedPrice?.price ?? 0);
@@ -428,7 +361,7 @@ export const orderData = {
 
         orderItems.push({
           product,
-          allocations,
+          inventory,
           quantity: item.quantity,
           quantityGram,
           unitGram: 1000,
@@ -487,39 +420,23 @@ export const orderData = {
       });
 
       for (const item of orderItems) {
-        const orderItem = order.items.find((createdItem) => createdItem.productId === item.product.id);
-        if (!orderItem) throw new Error("ORDER_ITEM_NOT_FOUND");
-        for (const allocation of item.allocations) {
-          const stockUpdate = await tx.inventory.updateMany({
-            where: {
-              id: allocation.inventory.id,
-              quantity: { gte: allocation.quantity },
-            },
-            data: { quantity: { decrement: allocation.quantity } },
-          });
-          if (stockUpdate.count !== 1) {
-            throw new Error(`INSUFFICIENT_STOCK:${item.product.name}`);
-          }
+        const stockUpdate = await tx.inventory.updateMany({
+          where: { id: item.inventory.id, quantity: { gte: item.quantity } },
+          data: { quantity: { decrement: item.quantity } },
+        });
+        if (stockUpdate.count !== 1) throw new Error(`INSUFFICIENT_STOCK:${item.product.name}`);
 
-          await tx.stockMovement.create({
-            data: {
-              productId: item.product.id,
-              type: "EXPORT",
-              quantity: allocation.quantity,
-              warehouse: allocation.inventory.warehouse,
-              balanceAfter: allocation.inventory.quantity - allocation.quantity,
-              reason: "Xuất kho theo đơn hàng B2C",
-              reference: input.orderCode,
-            },
-          });
-          await tx.orderItemInventoryAllocation.create({
-            data: {
-              orderItemId: orderItem.id,
-              inventoryId: allocation.inventory.id,
-              quantity: allocation.quantity,
-            },
-          });
-        }
+        await tx.stockMovement.create({
+          data: {
+            productId: item.product.id,
+            type: "EXPORT",
+            quantity: item.quantity,
+            warehouse: defaultWarehouse,
+            balanceAfter: item.inventory.quantity - item.quantity,
+            reason: "Xuất kho theo đơn hàng B2C",
+            reference: input.orderCode,
+          },
+        });
       }
 
       return order;

@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { authRoutes } from "./Auth/Auth.routes.js";
 import { categoryRoutes } from "./Category/Category.routes.js";
-import { contactMessageRoutes } from "./ContactMessage/ContactMessage.routes.js";
 import { customerRoutes } from "./Customer/Customer.routes.js";
 import { healthRoutes } from "./Health/Health.routes.js";
 import { inventoryRoutes } from "./Inventory/Inventory.routes.js";
@@ -23,7 +22,6 @@ export const apiRoutes = Router();
 
 apiRoutes.use("/auth", authRoutes);
 apiRoutes.use("/categories", categoryRoutes);
-apiRoutes.use("/contact-messages", contactMessageRoutes);
 apiRoutes.use("/customers", customerRoutes);
 apiRoutes.use("/health", healthRoutes);
 apiRoutes.use("/inventories", inventoryRoutes);

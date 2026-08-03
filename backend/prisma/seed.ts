@@ -10,7 +10,6 @@ import {
   ProductPriceType,
   PromotionStatus,
   PrismaClient,
-  PurchaseOrderStatus,
   QuoteRequestStatus,
   ReviewStatus,
   ShipmentStatus,
@@ -765,67 +764,6 @@ async function main() {
     },
   });
 
-  await prisma.supplier.updateMany({
-    where: { name: "Hop tac xa ca phe Lam Dong" },
-    data: {
-      name: "Hợp tác xã cà phê Lâm Đồng",
-      address: "Lâm Đồng",
-      note: "Nhà cung cấp hạt nhân Robusta và Arabica.",
-    },
-  });
-
-  const supplier = await prisma.supplier.upsert({
-    where: { name: "Hợp tác xã cà phê Lâm Đồng" },
-    update: {
-      phone: "0263000000",
-      email: "supplier@example.com",
-      address: "Lâm Đồng",
-      note: "Nhà cung cấp hạt nhân Robusta và Arabica.",
-    },
-    create: {
-      name: "Hợp tác xã cà phê Lâm Đồng",
-      phone: "0263000000",
-      email: "supplier@example.com",
-      address: "Lâm Đồng",
-      note: "Nhà cung cấp hạt nhân Robusta và Arabica.",
-    },
-  });
-
-  await prisma.purchaseOrder.upsert({
-    where: { purchaseCode: "PO-0001" },
-    update: {
-      supplierId: supplier.id,
-      totalAmount: 18000000,
-      status: PurchaseOrderStatus.RECEIVED,
-      note: "Đặt mua hàng đầu vào cho sản xuất.",
-    },
-    create: {
-      supplierId: supplier.id,
-      purchaseCode: "PO-0001",
-      expectedDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
-      receivedAt: new Date(),
-      totalAmount: 18000000,
-      status: PurchaseOrderStatus.RECEIVED,
-      note: "Đặt mua hàng đầu vào cho sản xuất.",
-      items: {
-        create: [
-          {
-            productId: robusta.id,
-            quantity: 100,
-            unitCost: 90000,
-            lineTotal: 9000000,
-          },
-          {
-            productId: espresso.id,
-            quantity: 60,
-            unitCost: 150000,
-            lineTotal: 9000000,
-          },
-        ],
-      },
-    },
-  });
-
   const conversation = await prisma.chatbotConversation.create({
     data: {
       userId: customer.id,
@@ -846,16 +784,6 @@ async function main() {
           },
         ],
       },
-    },
-  });
-
-  await prisma.contactMessage.create({
-    data: {
-      fullName: "Khách liên hệ demo",
-      phone: "0909123456",
-      email: "contact@example.com",
-      subject: "Cần báo giá cà phê rang xay",
-      message: "Tôi cần tư vấn mua sỉ cà phê rang xay cho chuỗi quán.",
     },
   });
 
