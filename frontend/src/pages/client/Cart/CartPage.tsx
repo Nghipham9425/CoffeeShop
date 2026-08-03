@@ -199,18 +199,19 @@ export function CartPage() {
               </Card>
             ) : (
               items.map((item) => (
-                <Card key={item.productId} className="bg-white">
-                  <CardContent className="grid gap-5 p-5 md:grid-cols-[1fr_auto] md:items-center">
-                    <div>
-                      <Badge>Tối thiểu 1 kg</Badge>
-                      <h2 className="mt-3 text-2xl font-black text-stone-950">{item.name}</h2>
-                      <p className="mt-2 text-stone-600">
-                        {formatVnd(item.price)} / {item.unit}
-                      </p>
+                <article key={item.productId} className="border-b border-[#d8bda8] py-6 first:pt-0 last:border-b-0">
+                  <div className="grid gap-5 sm:grid-cols-[110px_1fr_auto] sm:items-center">
+                    <Link to={`/san-pham/${item.productId}`} className="grid aspect-square w-28 place-items-center overflow-hidden bg-[#f8f2ec]">
+                      {item.imageUrl ? <img src={item.imageUrl} alt={item.name} className="h-full w-full object-contain p-2" /> : <ShoppingBag className="text-[#9b7258]" size={30} />}
+                    </Link>
+                    <div className="min-w-0">
+                      <h2 className="text-lg font-black leading-7 text-[#3b2419]">{item.name}</h2>
+                      <p className="mt-1 text-sm font-medium text-[#765544]">{formatVnd(item.price)} / {item.unit}</p>
+                      <p className="mt-1 text-sm text-stone-500">Đơn vị đặt hàng: {item.unit}</p>
                       {item.stockQuantity <= 0 ? <p className="mt-2 text-sm font-bold text-red-700">Sản phẩm hiện đã hết hàng. Vui lòng xóa khỏi giỏ.</p> : null}
                     </div>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <div className="flex items-center rounded-full border border-stone-200 bg-stone-50">
+                    <div className="flex flex-wrap items-center justify-start gap-3 sm:justify-end">
+                      <div className="flex items-center rounded-sm border border-stone-200 bg-stone-50">
                         <Button
                           aria-label="Giảm số lượng"
                           size="icon"
@@ -225,11 +226,14 @@ export function CartPage() {
                           type="number"
                           min={1}
                           max={item.stockQuantity}
-                          defaultValue={item.quantity}
+                          value={item.quantity}
+                          onChange={(event) => {
+                            const quantity = Number(event.currentTarget.value);
+                            if (Number.isFinite(quantity)) updateQuantity(item.productId, Math.round(quantity));
+                          }}
                           onBlur={(event) => {
                             const quantity = Number(event.currentTarget.value);
                             if (Number.isFinite(quantity)) updateQuantity(item.productId, Math.round(quantity));
-                            event.currentTarget.value = String(Math.min(item.stockQuantity, Math.max(1, Math.round(quantity) || 1)));
                           }}
                           onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }}
                           className="h-9 w-14 bg-transparent text-center font-black outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
@@ -244,16 +248,15 @@ export function CartPage() {
                           <Plus size={16} />
                         </Button>
                       </div>
-                      <span className="text-xs font-bold text-stone-500">Tối đa {item.stockQuantity} {item.unit}</span>
-                      <strong className="min-w-32 text-right text-lg text-[var(--roast)]">
+                      <strong className="min-w-28 text-right text-lg text-[var(--roast)]">
                         {formatVnd(item.price * item.quantity)}
                       </strong>
-                      <Button aria-label="Xóa sản phẩm" size="icon" variant="outline" onClick={() => removeItem(item.productId)}>
+                      <Button aria-label="Xóa sản phẩm" size="icon" variant="ghost" className="text-[#5a2d1d] hover:bg-[#f6e8df] hover:text-[#5a2d1d]" onClick={() => removeItem(item.productId)}>
                         <Trash2 size={18} />
                       </Button>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </article>
               ))
             )}
           </div>

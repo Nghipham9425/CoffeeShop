@@ -7,6 +7,7 @@ const CART_STORAGE_KEY = "phu_tai_cart";
 export type CartItem = {
   productId: number;
   name: string;
+  imageUrl: string | null;
   price: number;
   unit: string;
   quantity: number;
@@ -88,6 +89,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             {
               productId: product.id,
               name: product.name,
+              imageUrl: product.imageUrl,
               price,
               unit: product.unit,
               quantity: Math.min(product.stockQuantity, quantity),
@@ -113,8 +115,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
           const product = productById.get(item.productId);
           if (!product) return { ...item, stockQuantity: 0 };
           return {
-            ...item,
-            stockQuantity: product.stockQuantity,
+                    ...item,
+                    imageUrl: product.imageUrl,
+                    stockQuantity: product.stockQuantity,
             quantity: product.stockQuantity > 0 ? Math.min(item.quantity, product.stockQuantity) : item.quantity,
           };
         }));

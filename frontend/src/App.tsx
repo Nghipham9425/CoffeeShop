@@ -1,4 +1,5 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { useEffect } from "react";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AdminLayout } from "./layouts/AdminLayout";
 import { PublicLayout } from "./layouts/PublicLayout";
 import { CategoriesPage as AdminCategoriesPage } from "./pages/admin/categories/CategoriesPage";
@@ -35,7 +36,9 @@ import AdminChatbotPage from './pages/admin/chatbot/AdminChatbotPage';
 
 export default function App() {
   return (
-    <Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
       <Route element={<PublicLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/san-pham" element={<ProductsPage />} />
@@ -77,6 +80,17 @@ export default function App() {
         <Route path="chatbot" element={<AdminChatbotPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </>
   );
+}
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [pathname]);
+
+  return null;
 }

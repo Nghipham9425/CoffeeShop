@@ -27,6 +27,14 @@ export function PublicLayout() {
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showFloatingSocials, setShowFloatingSocials] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setShowFloatingSocials(window.scrollY > 180);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -111,21 +119,21 @@ export function PublicLayout() {
 
       <Outlet />
 
-      <footer className="mt-auto bg-[#21120c] text-white">
+      <footer className="mt-auto border-t border-[#dcc6b1] bg-[#f1e3d6] text-[#3b2419]">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <div className="grid gap-10 border-b border-white/15 pb-10 md:grid-cols-2 lg:grid-cols-[1.3fr_0.8fr_1fr_1fr]">
+          <div className="grid gap-10 border-b border-[#d7bdab] pb-10 md:grid-cols-2 lg:grid-cols-[1.3fr_0.8fr_1fr_1fr]">
             <div>
-              <div className="flex items-center gap-3"><div className="grid h-16 w-16 place-items-center overflow-hidden"><img src="/images/brand/logo-phu-tai.png" alt="Phú Tài Coffee Works" className="h-20 w-20 scale-[1.35] object-contain" /></div><div><p className="text-lg font-black uppercase">Phú Tài Coffee Works</p><p className="text-xs font-bold uppercase tracking-[0.12em] text-[#d7a77e]">Coffee factory</p></div></div>
-              <p className="mt-5 max-w-sm text-sm leading-7 text-white/70">Nhà máy rang xay, cung ứng và gia công cà phê cho quán, đại lý, doanh nghiệp F&B và thương hiệu riêng.</p>
-              <div className="mt-5 flex items-center gap-2">{socials.map(([label, href, Icon]) => <a key={label} href={href} target="_blank" rel="noreferrer" aria-label={label} className="grid h-9 w-9 place-items-center rounded-full border border-white/20 text-white transition-colors hover:border-[#d3a26a] hover:bg-[#d3a26a] hover:text-[#2a1a12]"><Icon size={16} /></a>)}</div>
+              <div className="flex items-center gap-3"><div className="grid h-16 w-16 place-items-center overflow-hidden"><img src="/images/brand/logo-phu-tai.png" alt="Phú Tài Coffee Works" className="h-20 w-20 scale-[1.35] object-contain" /></div><div><p className="text-lg font-black uppercase">Phú Tài Coffee Works</p><p className="text-xs font-bold uppercase tracking-[0.12em] text-[#a56842]">Coffee factory</p></div></div>
+              <p className="mt-5 max-w-sm text-sm leading-7 text-[#674938]">Nhà máy rang xay, cung ứng và gia công cà phê cho quán, đại lý, doanh nghiệp F&B và thương hiệu riêng.</p>
             </div>
             <FooterColumn title="Khám phá" links={[["Về nhà máy", "/ve-nha-may"], ["Sản phẩm", "/san-pham"], ["Báo giá doanh nghiệp", "/bao-gia"], ["Tra cứu đơn hàng", "/tra-cuu-don-hang"]]} />
             <FooterColumn title="Dịch vụ" links={[["Cà phê hạt rang", "/san-pham"], ["Cung ứng cho quán", "/bao-gia"], ["Gia công OEM / Private Label", "/bao-gia"], ["Tư vấn blend và quy cách", "/bao-gia"]]} />
-            <div><p className="text-sm font-black uppercase tracking-[0.12em] text-[#e8c59e]">Liên hệ</p><div className="mt-4 space-y-3 text-sm leading-6 text-white/70"><p><span className="block text-xs font-black uppercase text-white/45">Hotline</span>0886 332 533</p><p><span className="block text-xs font-black uppercase text-white/45">Email</span>sales@phutaicoffee.vn</p><p><span className="block text-xs font-black uppercase text-white/45">Địa chỉ</span>KCN Tân Bình, TP. Hồ Chí Minh</p></div></div>
+            <div><p className="text-sm font-black uppercase tracking-[0.12em] text-[#8b583a]">Liên hệ</p><div className="mt-4 space-y-3 text-sm leading-6 text-[#674938]"><p><span className="block text-xs font-black uppercase text-[#9a7c68]">Hotline</span>0886 332 533</p><p><span className="block text-xs font-black uppercase text-[#9a7c68]">Email</span>sales@phutaicoffee.vn</p><p><span className="block text-xs font-black uppercase text-[#9a7c68]">Địa chỉ</span>KCN Tân Bình, TP. Hồ Chí Minh</p></div></div>
           </div>
-          <div className="flex flex-col gap-2 pt-5 text-xs font-medium text-white/45 sm:flex-row sm:items-center sm:justify-between"><p>© 2026 Phú Tài Coffee Works. All rights reserved.</p><p>Rang xay · Gia công · Cung ứng cà phê</p></div>
+          <div className="flex flex-col gap-2 pt-5 text-xs font-medium text-[#806556] sm:flex-row sm:items-center sm:justify-between"><p>© 2026 Phú Tài Coffee Works. All rights reserved.</p><p>Rang xay · Gia công · Cung ứng cà phê</p></div>
         </div>
       </footer>
+      <FloatingSocialLinks visible={showFloatingSocials} />
       <CustomerChatbot />
     </div>
   );
@@ -141,7 +149,15 @@ function HeaderActions({ itemCount, user, notifications, unreadCount, onRead, on
 }
 
 function FooterColumn({ title, links }: { title: string; links: Array<readonly [string, string]> }) {
-  return <div><p className="text-sm font-black uppercase tracking-[0.12em] text-[#e8c59e]">{title}</p><nav className="mt-4 grid gap-3">{links.map(([label, href]) => <NavLink key={label} to={href} className="text-sm text-white/70 transition-colors hover:text-[#e8c59e]">{label}</NavLink>)}</nav></div>;
+  return <div><p className="text-sm font-black uppercase tracking-[0.12em] text-[#8b583a]">{title}</p><nav className="mt-4 grid gap-3">{links.map(([label, href]) => <NavLink key={label} to={href} className="text-sm text-[#674938] transition-colors hover:text-[#9d5f3c]">{label}</NavLink>)}</nav></div>;
+}
+
+function FloatingSocialLinks({ visible }: { visible: boolean }) {
+  return <aside className={`fixed left-4 top-1/2 z-30 -translate-y-1/2 transition-all duration-300 sm:left-6 ${visible ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-5 opacity-0"}`} aria-label="Mạng xã hội">
+    <div className="flex flex-col overflow-hidden rounded-full border border-[#decbbb] bg-white/95 p-1.5 shadow-lg backdrop-blur">
+      {socials.map(([label, href, Icon]) => <a key={label} href={href} target="_blank" rel="noreferrer" aria-label={label} className="grid h-9 w-9 place-items-center rounded-full text-[#684230] transition hover:bg-[#5b3322] hover:text-white"><Icon size={16} /></a>)}
+    </div>
+  </aside>;
 }
 
 function InfoItem({ icon: Icon, label, value, wide }: { icon: typeof Clock3; label: string; value: string; wide?: boolean }) {
