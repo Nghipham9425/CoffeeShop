@@ -20,8 +20,11 @@ async function canAccessConversation(req: Request, conversation: ChatbotConversa
   const userId = userIdFromRequest(req);
   if (userId) {
     const profile = await authService.profile(userId);
-    return conversation.userId === userId || staffRoles.has(profile.role);
+    if (conversation.userId === userId || staffRoles.has(profile.role)) {
+      return true;
+    }
   }
+
   const guestToken = guestTokenFromRequest(req);
   return Boolean(guestToken && conversation.guestTokenHash === hashGuestToken(guestToken));
 }

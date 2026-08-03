@@ -52,7 +52,7 @@ const CustomerChatbot = () => {
     const token = getAuthToken();
     const guestToken = localStorage.getItem('customer_chatbot_guest_token');
     if (token) headers.Authorization = `Bearer ${token}`;
-    else if (guestToken) headers['X-Chat-Session'] = guestToken;
+    if (guestToken) headers['X-Chat-Session'] = guestToken;
     return headers;
   };
 
