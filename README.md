@@ -1,5 +1,13 @@
 # Phú Tài Coffee Works
 
+## Cập nhật API nghiệp vụ
+
+- Giá sản phẩm dùng `product_prices`; không dùng `products.price` trong checkout hoặc trang quản trị.
+- Quản lý giá: `GET /api/products/:id/prices`, `POST /api/products/:id/prices`, `GET /api/products/:id/price-history`.
+- Các route giá cũ dưới `/api/promotions` đã ngừng sử dụng. Promotion chỉ quản lý voucher/khuyến mãi.
+- SePay dùng webhook chuẩn: `POST /api/sepay/webhook`. Khi khởi tạo thanh toán phải gửi `orderId` và `orderCode`.
+- Sau khi thay đổi Prisma schema, chạy `cd backend && npm run db:push && npm run db:generate`.
+
 Đồ án website thương mại điện tử cho mô hình nhà máy sản xuất, gia công và mua đi bán lại cà phê B2B/B2C.
 
 - `frontend`: React + Vite, giao diện giới thiệu, sản phẩm, liên hệ và mua lẻ.
@@ -365,3 +373,17 @@ cd backend
 npm run db:push
 npm run db:seed
 ```
+
+## Tài khoản thử nghiệm
+
+Chạy `npm run db:seed` trước khi dùng các tài khoản trong môi trường phát triển.
+
+| Vai trò | Email | Mật khẩu | Phạm vi kiểm thử |
+| --- | --- | --- | --- |
+| Quản trị viên | `admin@phutaicoffee.vn` | `Admin@123` | Toàn bộ chức năng quản trị, quản lý người dùng và duyệt voucher |
+| Nhân viên kinh doanh | `sales@phutaicoffee.vn` | `Staff@123` | Đơn hàng, báo giá B2B, khách hàng, sản phẩm và tạo voucher chờ duyệt |
+| Nhân viên kho | `warehouse@phutaicoffee.vn` | `Staff@123` | Chỉ quản lý kho, tồn kho và lịch sử nhập/xuất kho |
+| Kế toán | `accountant@phutaicoffee.vn` | `Staff@123` | Công nợ B2B, đơn hàng và báo cáo |
+| Khách hàng B2C | `khachle@example.com` | `Customer@123` | Hồ sơ, giỏ hàng, đặt hàng và lịch sử đơn hàng |
+
+Mật khẩu trên chỉ dùng để kiểm thử ở local. Cần thay đổi mật khẩu trước khi triển khai thực tế.
