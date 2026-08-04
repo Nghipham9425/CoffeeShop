@@ -178,6 +178,8 @@ model User {
   priceAdjustments     PriceAdjustment[]
   notifications        Notification[]
   businessCustomer     BusinessCustomer?
+  createdPromotions    Promotion[]         @relation("PromotionCreatedBy")
+  approvedPromotions   Promotion[]         @relation("PromotionApprovedBy")
 
   @@map("users")
 }
@@ -366,10 +368,17 @@ model Promotion {
   startAt        DateTime        @map("start_at")
   endAt          DateTime        @map("end_at")
   status         PromotionStatus @default(DRAFT)
+  createdById    Int?            @map("created_by_id")
+  approvedById   Int?            @map("approved_by_id")
+  approvedAt     DateTime?       @map("approved_at")
   createdAt      DateTime        @default(now()) @map("created_at")
   updatedAt      DateTime        @updatedAt @map("updated_at")
   orders         Order[]
+  createdBy      User?           @relation("PromotionCreatedBy", fields: [createdById], references: [id])
+  approvedBy     User?           @relation("PromotionApprovedBy", fields: [approvedById], references: [id])
 
+  @@index([status, createdAt])
+  @@index([createdById])
   @@map("promotions")
 }
 

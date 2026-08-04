@@ -21,7 +21,10 @@ export const createProductPromotion = async (req: Request, res: Response) => {
 export const createOrderPromotion = async (req: Request, res: Response) => {
   const validatedData = createOrderPromotionSchema.parse(req.body);
   try {
-    const result = await PromotionService.createOrderPromotion({ ...validatedData, startAt: new Date(validatedData.startAt), endAt: new Date(validatedData.endAt) });
+    const result = await PromotionService.createOrderPromotion(
+      { ...validatedData, startAt: new Date(validatedData.startAt), endAt: new Date(validatedData.endAt) },
+      { id: req.user!.userId, role: req.user!.role },
+    );
     res.status(201).json({ success: true, data: result });
   } catch (error) {
     if (error instanceof Error && error.message === 'VOUCHER_CODE_EXISTS') { res.status(409).json({ message: 'Mã voucher đã tồn tại.' }); return; }
@@ -56,6 +59,19 @@ export const updateOrderPromotionStatus = async (req: Request, res: Response) =>
       res.status(400).json({ message: 'Voucher đã hết hạn, không thể thay đổi trạng thái.' });
       return;
     }
+    throw error;
+  }
+};
+
+export const approveOrderPromotion = async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  try {
+    const result = await PromotionService.approveOrderPromotion(id, req.user!.userId);
+    res.json({ success: true, data: { ...result, discountValue: Number(result.discountValue), minOrderAmount: result.minOrderAmount == null ? null : Number(result.minOrderAmount) } });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'VOUCHER_NOT_FOUND') { res.status(404).json({ message: 'Không tìm thấy voucher.' }); return; }
+    if (error instanceof Error && error.message === 'VOUCHER_NOT_DRAFT') { res.status(409).json({ message: 'Chỉ voucher đang chờ duyệt mới có thể phê duyệt.' }); return; }
+    if (error instanceof Error && error.message === 'VOUCHER_EXPIRED') { res.status(400).json({ message: 'Voucher đã hết hạn, không thể phê duyệt.' }); return; }
     throw error;
   }
 };

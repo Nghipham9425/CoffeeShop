@@ -1,6 +1,7 @@
 import { LogOut } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { adminNavItems } from "../../data/admin";
+import { type StaffRole } from "../../data/adminPermissions";
 import { cn } from "../../lib/utils";
 import { type AdminUser } from "../../lib/adminApi";
 import { Button } from "../ui/button";
@@ -12,6 +13,9 @@ export function AdminSidebar({
   user: AdminUser | null;
   onLogout: () => void;
 }) {
+  const role = user?.role as StaffRole | undefined;
+  const visibleNavItems = adminNavItems.filter((item) => role && item.roles.includes(role));
+
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 border-r border-[#342018] bg-[#3b2419] text-white lg:flex lg:flex-col">
       <div className="flex h-20 items-center gap-3 border-b border-white/10 px-6">
@@ -25,7 +29,7 @@ export function AdminSidebar({
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {adminNavItems.map((item) => (
+        {visibleNavItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}

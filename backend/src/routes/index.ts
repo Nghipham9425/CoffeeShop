@@ -17,6 +17,7 @@ import { reviewRoutes } from "./Review/Review.routes.js";
 import { uploadRoutes } from "./Upload/Upload.routes.js";
 import { notificationRoutes } from "./Notification/Notification.routes.js";
 import { b2bRoutes } from "./B2B/B2B.routes.js";
+import { userManagementRoutes } from "./UserManagement/UserManagement.routes.js";
 
 export const apiRoutes = Router();
 
@@ -37,3 +38,4 @@ apiRoutes.use("/reviews", reviewRoutes);
 apiRoutes.use("/uploads", uploadRoutes);
 apiRoutes.use("/notifications", notificationRoutes);
 apiRoutes.use("/b2b", b2bRoutes);
+apiRoutes.use("/users", userManagementRoutes);

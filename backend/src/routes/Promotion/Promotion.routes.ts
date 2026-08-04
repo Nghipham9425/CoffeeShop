@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { createOrderPromotion, deleteUnusedOrderPromotion, getOrderPromotions, updateOrderPromotionStatus, validateVoucher } from '../../controllers/Promotion/Promotion.controller.js';
+import { approveOrderPromotion, createOrderPromotion, deleteUnusedOrderPromotion, getOrderPromotions, updateOrderPromotionStatus, validateVoucher } from '../../controllers/Promotion/Promotion.controller.js';
+import { UserRole } from '@prisma/client';
 import { asyncHandler } from '../../middleware/asyncHandler.js';
 import { authMiddleware, authorizeRoles } from '../../middleware/authMiddleware.js';
 
@@ -7,11 +8,12 @@ const router = Router();
 
 router.post('/validate', asyncHandler(validateVoucher));
 
-router.use(authMiddleware, authorizeRoles('ADMIN'));
+router.use(authMiddleware);
 
-router.post('/order-voucher', asyncHandler(createOrderPromotion));
-router.get('/order-vouchers', asyncHandler(getOrderPromotions));
-router.patch('/order-vouchers/:id/status', asyncHandler(updateOrderPromotionStatus));
-router.delete('/order-vouchers/:id', asyncHandler(deleteUnusedOrderPromotion));
+router.get('/order-vouchers', authorizeRoles(UserRole.ADMIN, UserRole.SALES), asyncHandler(getOrderPromotions));
+router.post('/order-voucher', authorizeRoles(UserRole.ADMIN, UserRole.SALES), asyncHandler(createOrderPromotion));
+router.patch('/order-vouchers/:id/approve', authorizeRoles(UserRole.ADMIN), asyncHandler(approveOrderPromotion));
+router.patch('/order-vouchers/:id/status', authorizeRoles(UserRole.ADMIN), asyncHandler(updateOrderPromotionStatus));
+router.delete('/order-vouchers/:id', authorizeRoles(UserRole.ADMIN), asyncHandler(deleteUnusedOrderPromotion));
 
 export default router;

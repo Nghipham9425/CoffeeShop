@@ -183,6 +183,17 @@ export type RetailCustomer = {
   } | null;
 };
 
+export type ManagedUser = {
+  id: number;
+  fullName: string;
+  email: string;
+  phone: string | null;
+  role: "ADMIN" | "SALES" | "WAREHOUSE" | "ACCOUNTANT" | "CUSTOMER";
+  isActive: boolean;
+  createdAt: string;
+  _count: { orders: number; addresses: number };
+};
+
 export type BusinessCustomer = {
   id: number;
   companyName: string;
@@ -588,6 +599,26 @@ export const adminApi = {
       method: "PATCH",
       headers: authHeaders(token),
       body: JSON.stringify(payload),
+    });
+  },
+
+  users(token: string, params: { keyword?: string; role?: ManagedUser["role"] } = {}) {
+    return request<ManagedUser[]>(`/users${buildQuery(params)}`, { headers: authHeaders(token) });
+  },
+
+  updateUserRole(token: string, id: number, role: ManagedUser["role"]) {
+    return request<ManagedUser>(`/users/${id}/role`, {
+      method: "PATCH",
+      headers: authHeaders(token),
+      body: JSON.stringify({ role }),
+    });
+  },
+
+  updateUserActive(token: string, id: number, isActive: boolean) {
+    return request<ManagedUser>(`/users/${id}/active`, {
+      method: "PATCH",
+      headers: authHeaders(token),
+      body: JSON.stringify({ isActive }),
     });
   },
 

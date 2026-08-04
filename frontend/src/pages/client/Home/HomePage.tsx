@@ -4,6 +4,7 @@ import { ImageCardGrid } from "../../../components/home/ImageCardGrid"
 import { Reveal } from "../../../components/home/Reveal"
 import { SectionHeading } from "../../../components/home/SectionHeading"
 import { StatsGrid } from "../../../components/home/StatsGrid"
+import { Seo } from "../../../components/Seo"
 import {
   categories,
   cleanFeatures,
@@ -16,6 +17,13 @@ import {
 export function HomePage() {
   return (
     <main>
+      <Seo
+        title="Nhà máy rang xay và gia công cà phê"
+        description="Phú Tài Coffee Works cung cấp cà phê rang xay, gia công OEM, báo giá B2B và giải pháp nguồn hàng cho quán, đại lý, doanh nghiệp F&B."
+        canonicalPath="/"
+        keywords="cà phê rang xay, gia công cà phê, OEM cà phê, cà phê B2B, Phú Tài Coffee Works"
+        structuredData={{ "@context": "https://schema.org", "@type": "Organization", name: "Phú Tài Coffee Works", url: window.location.origin, description: "Nhà máy rang xay, cung ứng và gia công cà phê B2C/B2B." }}
+      />
       <section>
         <div className="hm-hero">
           <div className="mx-auto max-w-[1500px] px-6 py-24 lg:px-20 lg:py-28">

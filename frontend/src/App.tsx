@@ -41,6 +41,7 @@ import { PricingPage } from './pages/admin/pricing/PricingPage';
 import { ReturnsPage } from './pages/admin/returns/ReturnsPage';
 import { ReviewsPage } from './pages/admin/reviews/ReviewsPage';
 import AdminChatbotPage from './pages/admin/chatbot/AdminChatbotPage';
+import { UsersPage as AdminUsersPage } from "./pages/admin/users/UsersPage";
 
 export default function App() {
   return (
@@ -95,6 +96,7 @@ export default function App() {
         <Route path="doi-tra" element={<ReturnsPage />} />
         <Route path="danh-gia" element={<ReviewsPage />} />
         <Route path="chatbot" element={<AdminChatbotPage />} />
+        <Route path="nguoi-dung" element={<AdminUsersPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

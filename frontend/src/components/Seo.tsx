@@ -6,7 +6,9 @@ type SeoProps = {
   canonicalPath?: string;
   image?: string | null;
   type?: "website" | "product";
-  structuredData?: Record<string, unknown>;
+  keywords?: string;
+  noIndex?: boolean;
+  structuredData?: Record<string, unknown> | Array<Record<string, unknown>>;
 };
 
 function setMeta(selector: string, attributes: Record<string, string>) {
@@ -20,7 +22,7 @@ function setMeta(selector: string, attributes: Record<string, string>) {
   Object.entries(attributes).forEach(([name, value]) => element?.setAttribute(name, value));
 }
 
-export function Seo({ title, description, canonicalPath, image, type = "website", structuredData }: SeoProps) {
+export function Seo({ title, description, canonicalPath, image, type = "website", keywords, noIndex = false, structuredData }: SeoProps) {
   useEffect(() => {
     const fullTitle = title.includes("Phú Tài Coffee Works") ? title : `${title} | Phú Tài Coffee Works`;
     const canonicalUrl = new URL(canonicalPath ?? window.location.pathname, window.location.origin).toString();
@@ -29,7 +31,8 @@ export function Seo({ title, description, canonicalPath, image, type = "website"
     document.title = fullTitle;
     document.documentElement.lang = "vi";
     setMeta('meta[name="description"]', { name: "description", content: description });
-    setMeta('meta[name="robots"]', { name: "robots", content: "index, follow, max-image-preview:large" });
+    setMeta('meta[name="robots"]', { name: "robots", content: noIndex ? "noindex, nofollow" : "index, follow, max-image-preview:large" });
+    if (keywords) setMeta('meta[name="keywords"]', { name: "keywords", content: keywords });
     setMeta('meta[property="og:title"]', { property: "og:title", content: fullTitle });
     setMeta('meta[property="og:description"]', { property: "og:description", content: description });
     setMeta('meta[property="og:type"]', { property: "og:type", content: type });
@@ -68,7 +71,7 @@ export function Seo({ title, description, canonicalPath, image, type = "website"
     return () => {
       document.getElementById(scriptId)?.remove();
     };
-  }, [canonicalPath, description, image, structuredData, title, type]);
+  }, [canonicalPath, description, image, keywords, noIndex, structuredData, title, type]);
 
   return null;
 }

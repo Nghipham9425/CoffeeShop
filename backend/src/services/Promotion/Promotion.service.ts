@@ -1,5 +1,5 @@
 import { prisma } from '../../data/prisma.js';
-import { DiscountType, PromotionStatus } from '@prisma/client';
+import { DiscountType, PromotionStatus, UserRole } from '@prisma/client';
 
 export class PromotionService {
   static async createProductPrices(data: {
@@ -24,13 +24,18 @@ export class PromotionService {
     });
   }
 
-  static async createOrderPromotion(data: any) {
+  static async createOrderPromotion(data: any, actor: { id: number; role: UserRole }) {
     if (await prisma.promotion.findFirst({ where: { code: { equals: data.code, mode: 'insensitive' } } })) throw new Error('VOUCHER_CODE_EXISTS');
+    const createdByAdmin = actor.role === UserRole.ADMIN;
     return await prisma.promotion.create({
       data: {
         ...data,
-        status: 'ACTIVE',
+        status: createdByAdmin ? PromotionStatus.ACTIVE : PromotionStatus.DRAFT,
+        createdById: actor.id,
+        approvedById: createdByAdmin ? actor.id : undefined,
+        approvedAt: createdByAdmin ? new Date() : undefined,
       },
+      include: { createdBy: { select: { id: true, fullName: true } }, approvedBy: { select: { id: true, fullName: true } }, _count: { select: { orders: true } } },
     });
   }
 
@@ -68,7 +73,19 @@ export class PromotionService {
   }
 
   static listOrderPromotions() {
-    return prisma.promotion.findMany({ orderBy: { createdAt: 'desc' }, include: { _count: { select: { orders: true } } } });
+    return prisma.promotion.findMany({ orderBy: { createdAt: 'desc' }, include: { _count: { select: { orders: true } }, createdBy: { select: { id: true, fullName: true } }, approvedBy: { select: { id: true, fullName: true } } } });
+  }
+
+  static async approveOrderPromotion(id: number, approvedById: number) {
+    const promotion = await prisma.promotion.findUnique({ where: { id } });
+    if (!promotion) throw new Error('VOUCHER_NOT_FOUND');
+    if (promotion.status !== PromotionStatus.DRAFT) throw new Error('VOUCHER_NOT_DRAFT');
+    if (promotion.endAt < new Date()) throw new Error('VOUCHER_EXPIRED');
+    return prisma.promotion.update({
+      where: { id },
+      data: { status: PromotionStatus.ACTIVE, approvedById, approvedAt: new Date() },
+      include: { _count: { select: { orders: true } }, createdBy: { select: { id: true, fullName: true } }, approvedBy: { select: { id: true, fullName: true } } },
+    });
   }
 
   static async updateOrderPromotionStatus(id: number, status: 'ACTIVE' | 'DISABLED') {

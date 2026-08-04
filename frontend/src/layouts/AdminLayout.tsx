@@ -3,6 +3,7 @@ import { Navigate, Outlet, useLocation, useOutletContext } from "react-router-do
 import { AdminSidebar } from "../components/admin/AdminSidebar";
 import { AdminTopbar } from "../components/admin/AdminTopbar";
 import { adminAuth, type AdminUser } from "../lib/adminApi";
+import { canAccessAdminPath, getDefaultAdminPath, type StaffRole } from "../data/adminPermissions";
 
 export type AdminOutletContext = {
   token: string | null;
@@ -41,11 +42,15 @@ export function AdminLayout() {
     [token, user, sessionVersion, setSession, clearSession],
   );
 
-  const allowedRoles = ["ADMIN", "SALES", "WAREHOUSE", "MARKETING", "ACCOUNTANT"];
+  const allowedRoles: StaffRole[] = ["ADMIN", "SALES", "WAREHOUSE", "ACCOUNTANT"];
 
-  if (!token || !user || !allowedRoles.includes(user.role)) {
+  if (!token || !user || !allowedRoles.includes(user.role as StaffRole)) {
     adminAuth.clearSession();
     return <Navigate to="/admin/dang-nhap" replace state={{ from: location.pathname }} />;
+  }
+
+  if (!canAccessAdminPath(user.role as StaffRole, location.pathname)) {
+    return <Navigate to={getDefaultAdminPath(user.role as StaffRole)} replace />;
   }
 
   return (

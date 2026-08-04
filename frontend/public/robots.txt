@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /tai-khoan/
+Disallow: /dat-lai-mat-khau
+Sitemap: https://coffee-shop-gray-nine.vercel.app/sitemap.xml

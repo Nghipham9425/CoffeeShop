@@ -22,6 +22,7 @@ const prisma = new PrismaClient();
 async function main() {
   const adminPasswordHash = await bcrypt.hash("Admin@123", 10);
   const customerPasswordHash = await bcrypt.hash("Customer@123", 10);
+  const staffPasswordHash = await bcrypt.hash("Staff@123", 10);
 
   await prisma.user.upsert({
     where: { email: "admin@phutaicoffee.vn" },
@@ -38,6 +39,19 @@ async function main() {
       role: UserRole.ADMIN,
     },
   });
+
+  const staffAccounts = [
+    { email: "sales@phutaicoffee.vn", fullName: "Nhân viên kinh doanh demo", phone: "0909000011", role: UserRole.SALES },
+    { email: "warehouse@phutaicoffee.vn", fullName: "Nhân viên kho demo", phone: "0909000012", role: UserRole.WAREHOUSE },
+    { email: "accountant@phutaicoffee.vn", fullName: "Kế toán demo", phone: "0909000013", role: UserRole.ACCOUNTANT },
+  ];
+  for (const account of staffAccounts) {
+    await prisma.user.upsert({
+      where: { email: account.email },
+      update: { fullName: account.fullName, phone: account.phone, role: account.role, isActive: true },
+      create: { ...account, passwordHash: staffPasswordHash },
+    });
+  }
 
   const customer = await prisma.user.upsert({
     where: { email: "khachle@example.com" },
