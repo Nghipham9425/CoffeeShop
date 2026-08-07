@@ -24,10 +24,10 @@ export function AdminSidebar({
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-40 w-72 border-r border-[#342018] bg-[#3b2419] text-white transition-transform duration-300 ease-out lg:flex lg:flex-col ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
+      className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col overflow-hidden border-r border-[#342018] bg-[#3b2419] text-white transition-transform duration-300 ease-out ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
       aria-label="Thanh điều hướng quản trị"
     >
-      <div className="flex h-20 items-center justify-between gap-3 border-b border-white/10 px-6">
+      <div className="flex h-20 shrink-0 items-center justify-between gap-3 border-b border-white/10 px-6">
         <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-lg border border-white/10 bg-[#f6ece4]">
           <img
             src="/images/brand/logo-phu-tai.png"
@@ -51,7 +51,7 @@ export function AdminSidebar({
         </button>
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-4 scrollbar-none [&::-webkit-scrollbar]:hidden">
+      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-4 py-4 scrollbar-none [&::-webkit-scrollbar]:hidden">
         {visibleNavItems.map((item) => (
           <NavLink
             key={item.to}
@@ -72,7 +72,7 @@ export function AdminSidebar({
         ))}
       </nav>
 
-      <div className="border-t border-white/10 p-4">
+      <div className="shrink-0 border-t border-white/10 p-4">
         <div className="mb-3 rounded-lg bg-white/10 p-3">
           <p className="text-xs font-semibold text-[#ead8ca]">Đăng nhập</p>
           <p className="mt-1 text-sm font-black">
