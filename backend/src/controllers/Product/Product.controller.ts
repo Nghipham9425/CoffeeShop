@@ -41,6 +41,13 @@ export const productController = {
     res.json(product);
   },
 
+  async getRecommendations(req: Request, res: Response) {
+    const productId = Number(req.params.id);
+    const limit = req.query.limit ? Number(req.query.limit) : 4;
+    const recommendations = await productService.getRecommendations(productId, limit);
+    res.json(recommendations);
+  },
+
   async getProductPrices(req: Request, res: Response) {
     try {
       res.json(await productService.getProductPrices(Number(req.params.id)));

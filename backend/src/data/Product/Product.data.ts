@@ -103,4 +103,8 @@ export const productData = {
   findPriceHistory(productId: number) {
     return prisma.priceAdjustment.findMany({ where: { productId }, include: { createdBy: { select: { id: true, fullName: true } } }, orderBy: { createdAt: "desc" }, take: 200 });
   },
+
+  findByIds(ids: number[]) {
+    return prisma.product.findMany({ where: { id: { in: ids }, isActive: true }, include: productInclude });
+  },
 };

@@ -1,4 +1,5 @@
 import { productData } from "../../data/Product/Product.data.js";
+import { orderData } from "../../data/Order/Order.data.js";
 import type { ProductModel } from "../../models/Product/Product.model.js";
 import { slugify } from "../../utils/slugify.js";
 import type {
@@ -149,5 +150,48 @@ export const productService = {
       oldPrice: item.oldPrice === null ? null : Number(item.oldPrice),
       newPrice: Number(item.newPrice),
     }));
+  },
+
+  async getRecommendations(productId: number, limit = 4) {
+    const ordersA = await orderData.findOrdersContainingProduct(productId, 5000);
+    const totalCompleted = await orderData.countCompletedOrders();
+
+    const ordersWithA = ordersA.length;
+    const counts = new Map<number, number>();
+    for (const order of ordersA) {
+      for (const item of order.items) {
+        const pid = item.productId;
+        if (pid === productId) continue;
+        counts.set(pid, (counts.get(pid) ?? 0) + 1);
+      }
+    }
+
+    const sortedByCount = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).map(([id]) => id);
+    const candidates = sortedByCount.slice(0, Math.max(limit * 3, 12));
+
+    if (candidates.length === 0) {
+      const fallback = (await productData.findMany({ isRetail: true })).filter((p) => p.id !== productId).slice(0, limit);
+      return fallback.map(mapProduct);
+    }
+
+    const products = await productData.findByIds(candidates);
+    const byId = new Map(products.map((p) => [p.id, p] as const));
+
+    const scored = [] as Array<{ product: ProductRecord; cooccurCount: number; support: number; confidence: number; lift: number }>;
+    for (const id of candidates) {
+      const cooccur = counts.get(id) ?? 0; // orders containing both A and B (from ordersA)
+      const ordersWithB = await orderData.countOrdersContainingProduct(id);
+      const supportA = totalCompleted > 0 ? ordersWithA / totalCompleted : 0;
+      const supportB = totalCompleted > 0 ? ordersWithB / totalCompleted : 0;
+      const supportAB = totalCompleted > 0 ? cooccur / totalCompleted : 0;
+      const confidence = ordersWithA > 0 ? cooccur / ordersWithA : 0;
+      const lift = supportB > 0 ? confidence / supportB : 0;
+      const prod = byId.get(id);
+      if (!prod) continue;
+      scored.push({ product: prod, cooccurCount: cooccur, support: supportAB, confidence, lift });
+    }
+
+    scored.sort((a, b) => b.lift - a.lift || b.confidence - a.confidence || b.cooccurCount - a.cooccurCount);
+    return scored.slice(0, limit).map((s) => ({ ...mapProduct(s.product), cooccurCount: s.cooccurCount, support: s.support, confidence: s.confidence, lift: s.lift } as any));
   },
 };

@@ -56,9 +56,15 @@ export function ProductDetailPage() {
     const isLegacyId = /^\d+$/.test(slug);
     const detailRequest = isLegacyId ? publicApi.product(Number(slug)) : publicApi.productBySlug(slug);
 
-    Promise.all([detailRequest, publicApi.products()])
-      .then(async ([detail, list]) => {
+    detailRequest
+      .then(async (detail) => {
         const productReviews = await publicApi.productReviews(detail.id);
+        let list: PublicProduct[] = [];
+        try {
+          list = await publicApi.productRecommendations(detail.id);
+        } catch {
+          list = await publicApi.products();
+        }
         if (!alive) return;
         setProduct(detail);
         setQuantity(1);

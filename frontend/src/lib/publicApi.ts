@@ -146,6 +146,10 @@ export const publicApi = {
     return request<PublicProduct>(`/products/${id}`);
   },
 
+  productRecommendations(productId: number) {
+    return request<PublicProduct[]>(`/products/${productId}/recommendations`);
+  },
+
   productBySlug(slug: string) {
     return request<PublicProduct>(`/products/slug/${encodeURIComponent(slug)}`);
   },

@@ -21,6 +21,7 @@ productRoutes.get(
   authorizeRoles(UserRole.ADMIN, UserRole.SALES),
   asyncHandler(productController.getPriceHistory),
 );
+productRoutes.get("/:id/recommendations", asyncHandler(productController.getRecommendations));
 productRoutes.get("/:id", asyncHandler(productController.getProductById));
 productRoutes.post(
   "/",

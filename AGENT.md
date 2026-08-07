@@ -16,6 +16,17 @@
 Cập nhật lần cuối: 28/07/2026
 Thư mục dự án: `D:\Coffee_B2B`
 
+## Cập nhật chuẩn hóa nghiệp vụ (02/08/2026)
+
+- `product_prices` là nguồn giá nghiệp vụ duy nhất; `products.price` chỉ còn để tương thích dữ liệu cũ.
+- API giá được đặt dưới Product: `GET/POST /api/products/:id/prices`, `GET /api/products/:id/price-history`.
+- Mỗi thay đổi giá tạo bản ghi `price_adjustments` trong cùng transaction.
+- `PATCH /api/inventories/:id` chỉ sửa ngưỡng cảnh báo; thay đổi tồn phải qua phiếu kho.
+- Đơn B2C lưu phân bổ kho theo từng dòng đơn (`order_item_inventory_allocations`) để hoàn kho đúng kho đã xuất.
+- Chatbot dùng token phiên ngẫu nhiên cho khách vãng lai; tài khoản chỉ truy cập hội thoại thuộc sở hữu, nhân sự nội bộ có quyền xem hỗ trợ.
+- Checkout chỉ nhận COD, chuyển khoản và SePay. SePay yêu cầu `orderId` cùng `orderCode`; webhook chuẩn duy nhất là `POST /api/sepay/webhook`.
+- Loyalty Profile được tạo khi đăng ký/đăng nhập Google tạo tài khoản mới. Đơn B2C hoàn thành tích 1 điểm trên mỗi 10.000 VNĐ và tự cập nhật hạng.
+
 ## Mục tiêu
 
 Xây dựng website thương mại điện tử cho nhà máy sản xuất, rang xay, gia công và mua đi bán lại cà phê theo mô hình B2B/B2C.

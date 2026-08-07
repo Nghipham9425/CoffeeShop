@@ -114,6 +114,23 @@ export const orderData = {
     return prisma.order.findFirst({ where: { id, userId }, include: orderInclude });
   },
 
+  findOrdersContainingProduct(productId: number, limit = 1000) {
+    return prisma.order.findMany({
+      where: { status: "COMPLETED", items: { some: { productId } } },
+      include: { items: { select: { productId: true } } },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+    });
+  },
+
+  countCompletedOrders() {
+    return prisma.order.count({ where: { status: "COMPLETED" } });
+  },
+
+  countOrdersContainingProduct(productId: number) {
+    return prisma.order.count({ where: { status: "COMPLETED", items: { some: { productId } } } });
+  },
+
   async cancelCustomerOrder(id: number, userId: number, reason: string) {
     return prisma.$transaction(async (tx) => {
       const order = await tx.order.findFirst({
