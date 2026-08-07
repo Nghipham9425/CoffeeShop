@@ -81,12 +81,18 @@ export function PublicLayout() {
     }
   }
 
+  function handleLogout() {
+    adminAuth.clearSession();
+    setIsMenuOpen(false);
+    window.location.assign("/");
+  }
+
   return (
-    <div className="min-h-screen bg-white text-[var(--ink)]">
+    <div className="min-h-screen bg-white text-(--ink)">
       <header className="sticky top-0 z-40 border-b border-stone-200 bg-white/95 shadow-sm backdrop-blur">
-        <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-5 px-4 py-3 sm:px-6 lg:px-10">
+        <div className="mx-auto flex max-w-375 items-center justify-between gap-5 px-4 py-3 sm:px-6 lg:px-10">
           <NavLink to="/" onClick={() => setIsMenuOpen(false)} className="flex min-w-0 items-center gap-3">
-            <div className="grid h-14 w-[70px] shrink-0 place-items-center overflow-hidden sm:h-16 sm:w-20">
+            <div className="grid h-14 w-17.5 shrink-0 place-items-center overflow-hidden sm:h-16 sm:w-20">
               <img src="/images/brand/logo-phu-tai.png" alt="Phú Tài Coffee Works" className="h-20 w-20 scale-[1.3] object-contain" />
             </div>
             <div className="min-w-0 leading-tight">
@@ -107,14 +113,14 @@ export function PublicLayout() {
           </div>
         </div>
 
-        <div className="mx-auto hidden max-w-[1500px] border-t border-stone-200 px-6 lg:block lg:px-10">
+        <div className="mx-auto hidden max-w-375 border-t border-stone-200 px-6 lg:block lg:px-10">
           <div className="flex h-14 items-center justify-between">
             <nav className="flex h-full items-center gap-6">{navItems.map(([label, href]) => <NavLink key={href} to={href} className={({ isActive }) => `hm-nav-link ${isActive ? "hm-nav-link-active" : ""}`}>{label}</NavLink>)}</nav>
             <HeaderActions itemCount={itemCount} user={user} notifications={notifications} unreadCount={unreadCount} onRead={markNotificationRead} onReadAll={markAllNotificationsRead} />
           </div>
         </div>
 
-        {isMenuOpen ? <div className="border-t border-stone-200 bg-white px-4 py-4 lg:hidden"><nav className="grid gap-1">{navItems.map(([label, href]) => <NavLink key={href} to={href} onClick={() => setIsMenuOpen(false)} className={({ isActive }) => `rounded-lg px-4 py-3 text-sm font-black ${isActive ? "bg-[#f5ebdf] text-[#4b2418]" : "text-stone-700 hover:bg-stone-100"}`}>{label}</NavLink>)}</nav><div className="mt-3 grid gap-2 border-t border-stone-100 pt-3"><NavLink to="/tra-cuu-don-hang" onClick={() => setIsMenuOpen(false)} className="rounded-lg px-4 py-3 text-sm font-bold text-stone-700 hover:bg-stone-100">Tra cứu đơn hàng</NavLink>{user ? <NavLink to="/tai-khoan/thong-tin" onClick={() => setIsMenuOpen(false)} className="rounded-lg px-4 py-3 text-sm font-bold text-stone-700 hover:bg-stone-100">Tài khoản của tôi</NavLink> : <NavLink to="/dang-nhap" onClick={() => setIsMenuOpen(false)} className="rounded-lg px-4 py-3 text-sm font-bold text-stone-700 hover:bg-stone-100">Đăng nhập</NavLink>}</div></div> : null}
+        {isMenuOpen ? <div className="border-t border-stone-200 bg-white px-4 py-4 lg:hidden"><nav className="grid gap-1">{navItems.map(([label, href]) => <NavLink key={href} to={href} onClick={() => setIsMenuOpen(false)} className={({ isActive }) => `rounded-lg px-4 py-3 text-sm font-black ${isActive ? "bg-[#f5ebdf] text-[#4b2418]" : "text-stone-700 hover:bg-stone-100"}`}>{label}</NavLink>)}</nav><div className="mt-3 grid gap-2 border-t border-stone-100 pt-3"><NavLink to="/tra-cuu-don-hang" onClick={() => setIsMenuOpen(false)} className="rounded-lg px-4 py-3 text-sm font-bold text-stone-700 hover:bg-stone-100">Tra cứu đơn hàng</NavLink>{user ? <><NavLink to="/tai-khoan/thong-tin" onClick={() => setIsMenuOpen(false)} className="rounded-lg px-4 py-3 text-sm font-bold text-stone-700 hover:bg-stone-100">Tài khoản của tôi</NavLink><button type="button" onClick={handleLogout} className="flex items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-bold text-red-700 hover:bg-red-50"><LogOut size={16} /> Đăng xuất</button></> : <NavLink to="/dang-nhap" onClick={() => setIsMenuOpen(false)} className="rounded-lg px-4 py-3 text-sm font-bold text-stone-700 hover:bg-stone-100">Đăng nhập</NavLink>}</div></div> : null}
       </header>
 
       <Outlet />
@@ -161,5 +167,5 @@ function FloatingSocialLinks({ visible }: { visible: boolean }) {
 }
 
 function InfoItem({ icon: Icon, label, value, wide }: { icon: typeof Clock3; label: string; value: string; wide?: boolean }) {
-  return <div className={`flex items-center gap-3 ${wide ? "max-w-[390px]" : ""}`}><span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-stone-300 text-[#70422e]"><Icon size={20} strokeWidth={1.8} /></span><span><span className="block text-[10px] font-black uppercase tracking-wide text-stone-500">{label}</span><span className="block text-sm font-bold text-stone-700">{value}</span></span></div>;
+  return <div className={`flex items-center gap-3 ${wide ? "max-w-97.5" : ""}`}><span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-stone-300 text-[#70422e]"><Icon size={20} strokeWidth={1.8} /></span><span><span className="block text-[10px] font-black uppercase tracking-wide text-stone-500">{label}</span><span className="block text-sm font-bold text-stone-700">{value}</span></span></div>;
 }
